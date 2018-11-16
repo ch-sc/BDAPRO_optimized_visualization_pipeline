@@ -64,3 +64,5 @@ Vega-Lite: A Grammar of Interactive Graphics. IEEE Trans. Vis. Comput. Graph. 23
 
 [7] Eleni Tzirita Zacharatou, Harish Doraiswamy, Anastasia Ailamaki, Cláudio T. Silva, Juliana Freire:
 GPU Rasterization for Real-Time Spatial Aggregation over Arbitrary Polygons. 352-365
+
+[8]  G. Burtini, S. Fazackerley, and R. Lawrence. Time series compression for adaptive chart generation. In CCECE, pages 1–6. IEEE, 2013.
