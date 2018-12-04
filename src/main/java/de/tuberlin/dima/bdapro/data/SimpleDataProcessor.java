@@ -5,13 +5,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.StopWatch;
 
 @Slf4j
-public class VanillaJavaDataProcessor extends DataProcessor {
+public class SimpleDataProcessor extends DataProcessor {
 	
 	private AppConfig config;
+	private DataAccessor dataAccessor;
 	
-	DataAccessor dataAccessor;
-	
-	public VanillaJavaDataProcessor(AppConfig config, DataAccessor dataAccessor) {
+	public SimpleDataProcessor(AppConfig config, DataAccessor dataAccessor) {
 		this.config = config;
 		this.dataAccessor = dataAccessor;
 	}
@@ -23,19 +22,21 @@ public class VanillaJavaDataProcessor extends DataProcessor {
 		timer.start();
 		
 		int maxDistance = 0;
-		int maxTip = 0;
+		int maxFare = 0;
 		
 		while (dataAccessor.next()) {
-			maxDistance = Math.max(maxDistance, dataAccessor.getDistance());
-			maxTip = Math.max(maxTip, dataAccessor.getTip());
+			if (maxDistance < dataAccessor.getDistance())
+				maxDistance = dataAccessor.getDistance();
+			if (maxFare < dataAccessor.getFare())
+				maxFare = dataAccessor.getFare();
 		}
-		
+
 		dataAccessor.reset();
-		
+
 		int[][] scatterPlot = new int[xBound][yBound];
 		while (dataAccessor.next()) {
-			scatterPlot[Math.max(0, (dataAccessor.getDistance() / maxDistance * xBound) - 1)]
-					[Math.max(0, (dataAccessor.getTip() / maxTip * yBound) - 1)]++;
+			scatterPlot[Math.max(0, (int) (((double) dataAccessor.getDistance() / maxDistance) * xBound) -1)]
+					[Math.max(0, (int) (((double) dataAccessor.getFare() / maxFare) * yBound) - 1)]++;
 		}
 		timer.stop();
 		log.info("elapsed time for vanilla java: " + timer.getTime() + "ms");
