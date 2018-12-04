@@ -34,12 +34,13 @@ public class FlinkDataProcessor extends DataProcessor {
 		this.env = env;
 	}
 	
+	
 	public int[][] scatterPlot(int xBound, int yBound) {
 		CsvReader csvReader = env.readCsvFile(config.getDataLocation())
 				.ignoreFirstLine()
 				.ignoreInvalidLines()
 				.fieldDelimiter(',')
-				.includeFields(createFilterMask(4, 13)); // 4: distance, 13: fare
+				.includeFields(createFilterMask(4, 10)); // 4: distance, 10: fare
 		
 		DataSet<Tuple2<Double, Double>> data = csvReader.types(Double.class, Double.class)
 				.project(0, 1);
@@ -53,20 +54,20 @@ public class FlinkDataProcessor extends DataProcessor {
 							Math.max(t1.f1, t2.f1)))
 					.collect();
 			
-			final Tuple2<Double, Double> maxValues = maxValuesCollection.get(0);
+			final Tuple2<Double, Double> maxValues = new Tuple2<Double, Double>(
+					// converting  double values into integers by shifting the floating point two digits to the right
+					maxValuesCollection.get(0).f0 * 100,
+					maxValuesCollection.get(0).f1 * 100);
 			
 			
-			
-			List<Integer[][]> plotPoints = data
+			List<Integer[][]> dataPoints = data
 					.reduceGroup(new GroupReduceFunction<Tuple2<Double, Double>, Tuple2<Integer, Integer>>() {
 						@Override
 						public void reduce(Iterable<Tuple2<Double, Double>> iterable,
 								Collector<Tuple2<Integer, Integer>> collector) {
-							iterable.forEach(t -> {
-								collector.collect(new Tuple2<>(
-										Math.max(0, (int) (t.f0 / maxValues.f0 * xBound) - 1),
-										Math.max(0, (int) (t.f1 / maxValues.f1 * yBound) - 1)));
-							});
+							iterable.forEach(t -> collector.collect(new Tuple2<>(
+									Math.max(0, (int) ((t.f0 / maxValues.f0) * xBound) - 1),
+									Math.max(0, (int) ((t.f1 / maxValues.f1) * yBound) - 1))));
 						}
 					})
 					.reduceGroup(new GroupReduceFunction<Tuple2<Integer, Integer>, Integer[][]>() {
@@ -91,17 +92,17 @@ public class FlinkDataProcessor extends DataProcessor {
 					})
 					.collect();
 			
-			int[][] scatter = new int[xBound][yBound];
-			Integer[][] scatterArray = plotPoints.get(0);
+			int[][] resultArray = new int[xBound][yBound];
+			Integer[][] scatterArray = dataPoints.get(0);
 			IntStream.range(0, scatterArray.length)
 					.parallel()
-					.forEach(i -> scatter[i] = ArrayUtils.toPrimitive(scatterArray[i], 0));
-			return scatter;
+					.forEach(i -> resultArray[i] = ArrayUtils.toPrimitive(scatterArray[i], 0));
+			return resultArray;
 		} catch (Exception e) {
 			throw new BusinessException(ExceptionUtils.getMessage(e), e);
 		} finally {
 			timer.stop();
-			log.info("elapsed time for flink: " + timer.getTime() + "ms");
+			log.info("Elapsed time of Flink processing: " + timer.getTime() + "ms");
 		}
 	}
 	
