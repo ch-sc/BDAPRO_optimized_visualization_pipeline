@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Vector;
+import java.util.stream.Stream;
 
 import de.tuberlin.dima.bdapro.error.BusinessException;
 import de.tuberlin.dima.bdapro.model.TaxiRides;
@@ -13,7 +14,7 @@ import lombok.Getter;
 
 
 public class DataAccessor {
-
+	
 	@Getter
 	private int cursor = -1;
 	@Getter
@@ -24,9 +25,11 @@ public class DataAccessor {
 	@Getter
 	private File file;
 	
+	
 	public DataAccessor(File file) {
 		this.file = file;
 	}
+	
 	
 	public void loadData() {
 		clear();
@@ -68,21 +71,21 @@ public class DataAccessor {
 				i++;
 //				taxiRides.getDropOffDate().add();
 				taxiRides.getPassengerCount().add(Integer.valueOf(values[i++]));
-				taxiRides.getDistance().add(Integer.valueOf(values[i++].replace(".", "")));
+				taxiRides.getDistance().add((int) (Double.valueOf(values[i++]) * 100));
 				taxiRides.getRating().add(Short.valueOf(values[i++]));
 				taxiRides.getStoreFwdFlag().add(values[i++].charAt(0));
 				taxiRides.getPickUpLocation().add(Integer.valueOf(values[i++]));
 				taxiRides.getDropOffLocation().add(Integer.valueOf(values[i++]));
 				taxiRides.getPaymentType().add(Integer.valueOf(values[i++]));
-				taxiRides.getFare().add(Integer.valueOf(values[i++].replace(".", "")));
-				taxiRides.getExtra().add(Integer.valueOf(values[i++].replace(".", "")));
-				taxiRides.getMtaTax().add(Integer.valueOf(values[i++].replace(".", "")));
-				taxiRides.getTip().add(Integer.valueOf(values[i++].replace(".", "")));
-				taxiRides.getTolls().add(Integer.valueOf(values[i++].replace(".", "")));
-				taxiRides.getImprovementSurcharge().add(Integer.valueOf(values[i++].replace(".", "")));
-				taxiRides.getTotalAmount().add(Integer.valueOf(values[i].replace(".", "")));
+				taxiRides.getFare().add((int) (Double.valueOf(values[i++]) * 100));
+				taxiRides.getExtra().add((int) (Double.valueOf(values[i++]) * 100));
+				taxiRides.getMtaTax().add((int) (Double.valueOf(values[i++]) * 100));
+				taxiRides.getTip().add((int) (Double.valueOf(values[i++]) * 100));
+				taxiRides.getTolls().add((int) (Double.valueOf(values[i++]) * 100));
+				taxiRides.getImprovementSurcharge().add((int) (Double.valueOf(values[i++]) * 100));
+				taxiRides.getTotalAmount().add((int) (Double.valueOf(values[i]) * 100));
 			}
-
+			
 			length = taxiRides.getVendorId().size();
 		} catch (FileNotFoundException e) {
 			throw new BusinessException("File [" + file.getName() + "] not found: " + e.getMessage(), e);
@@ -91,83 +94,117 @@ public class DataAccessor {
 		}
 	}
 	
+	
 	public void reset() {
 		cursor = -1;
 	}
 	
+	
 	private void clear() {
 		cursor = -1;
 		length = 0;
+		taxiRides = null;
 	}
-	
-	
+
+
 	public Integer getVendorId() {
 		return taxiRides.getVendorId().get(cursor);
 	}
-	
+
 	public Integer getPassengerCount() {
 		return taxiRides.getPassengerCount().get(cursor);
 	}
-	
+
 	public Integer getDistance() {
 		return taxiRides.getDistance().get(cursor);
 	}
-	
+
 	public Short getRating() {
 		return taxiRides.getRating().get(cursor);
 	}
-	
+
 	public Character getStoreFwdFlag() {
 		return taxiRides.getStoreFwdFlag().get(cursor);
 	}
-	
+
 	public Integer getPickUpLocation() {
 		return taxiRides.getPickUpLocation().get(cursor);
 	}
-	
+
 	public Integer getDropOffLocation() {
 		return taxiRides.getDropOffLocation().get(cursor);
 	}
-	
+
 	public Integer getPaymentType() {
 		return taxiRides.getPaymentType().get(cursor);
 	}
-	
+
 	public Integer getFare() {
 		return taxiRides.getFare().get(cursor);
 	}
-	
+
 	public Integer getExtra() {
 		return taxiRides.getExtra().get(cursor);
 	}
-	
+
 	public Integer getMtaTax() {
 		return taxiRides.getMtaTax().get(cursor);
 	}
-	
+
 	public Integer getTip() {
 		return taxiRides.getTip().get(cursor);
 	}
-	
+
 	public Integer getTolls() {
 		return taxiRides.getTolls().get(cursor);
 	}
-	
+
 	public Integer getImprovementSurcharge() {
 		return taxiRides.getImprovementSurcharge().get(cursor);
 	}
-	
+
 	public Integer getTotalAmount() {
 		return taxiRides.getTotalAmount().get(cursor);
 	}
+	
 	
 	public boolean hasNext() {
 		return cursor < length - 1;
 	}
 	
+	
 	public synchronized boolean next() {
 		cursor++;
 		return hasNext();
+	}
+	
+	
+	public Stream<TaxiRide> stream() {
+		reset();
+		
+		if (!hasNext()) {
+			return Stream.empty();
+		}
+		
+
+//		return Stream
+//				.generate(() -> {
+//					next();
+//					return new TaxiRide(this, cursor);
+//				})
+////				.parallel()
+//				.limit(length);
+
+		
+		next();
+		return Stream
+				.iterate(new TaxiRide(this, cursor), taxiRide -> {
+					this.next();
+					taxiRide.setCursor(cursor);
+					return taxiRide;
+//					return new TaxiRide(this, cursor);
+				})
+				.limit(length);
 	}
 	
 }

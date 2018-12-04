@@ -8,8 +8,10 @@ import de.tuberlin.dima.bdapro.config.AppConfigLoader;
 import de.tuberlin.dima.bdapro.data.DataAccessor;
 import de.tuberlin.dima.bdapro.data.DataProcessor;
 import de.tuberlin.dima.bdapro.data.FlinkDataProcessor;
-import de.tuberlin.dima.bdapro.data.VanillaJavaDataProcessor;
+import de.tuberlin.dima.bdapro.data.ParallelDataProcessor;
+import de.tuberlin.dima.bdapro.data.SimpleDataProcessor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.flink.api.java.ExecutionEnvironment;
 
@@ -37,6 +39,8 @@ public class App {
 				executionType = ExecutionType.FLINK;
 			} else if (arg1.equalsIgnoreCase("native")) {
 				executionType = ExecutionType.NATIVE;
+			} else if (arg1.equalsIgnoreCase("parallel")) {
+				executionType = ExecutionType.NATIVE_PARALLEL;
 			} else
 				throw new IllegalArgumentException("first parameter specifies execution type. Can be " + Arrays
 						.toString(ExecutionType.values()));
@@ -48,22 +52,33 @@ public class App {
 		switch (executionType){
 			case NATIVE:
 				
-				dataProcessor = new VanillaJavaDataProcessor(config, loadData(config));
+				dataProcessor = new SimpleDataProcessor(config, loadData(config));
+				scatter = dataProcessor.scatterPlot(x, y);
+				break;
+			case NATIVE_PARALLEL:
+				dataProcessor = new ParallelDataProcessor(loadData(config));
 				scatter = dataProcessor.scatterPlot(x, y);
 				break;
 			case FLINK:
+			default:
 				dataProcessor = new FlinkDataProcessor(config, ExecutionEnvironment.getExecutionEnvironment());
 				scatter = dataProcessor.scatterPlot(x, y);
 				break;
 		}
 		
+		logResult(scatter, x, y);
+	}
+	
+	private static void logResult(int[][] scatter, int x, int y) {
 		
-//		if (log.isInfoEnabled()){
-//			Integer[][] subarray = ArrayUtils.subarray(scatter, 0, Math.min(100, scatter.length-1));
-//			for (Integer[] dots : subarray) {
-//				log.info(Arrays.deepToString(ArrayUtils.subarray(scatter, 0, Math.min(100, scatter.length-1))));
-//			}
-//		}
+		StringBuffer stringBuffer = new StringBuffer(100 * 100 * 2).append("Output:\n");
+		for (int i = 0; i < Math.min(100, x - 1); i++) {
+			for (int j = 0; j < Math.min(100, y -1); j++) {
+				stringBuffer.append(scatter[i][j]). append(" ");
+			}
+			stringBuffer.append("\n");
+		}
+		log.info(stringBuffer.toString());
 	}
 	
 	public static DataAccessor loadData(AppConfig config) {
@@ -74,6 +89,7 @@ public class App {
 	
 	private static enum ExecutionType {
 		NATIVE,
+		NATIVE_PARALLEL,
 		FLINK
 	}
 	
