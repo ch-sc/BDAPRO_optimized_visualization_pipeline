@@ -16,77 +16,77 @@ public class TaxiRide {
 	
 	
 	public Integer getVendorId() {
-		return this.dataAccessor.getTaxiRides().getVendorId().get(cursor);
+		return this.dataAccessor.getDataStore().getVendorId().get(cursor);
 	}
 	
 	
 	public Integer getPassengerCount() {
-		return this.dataAccessor.getTaxiRides().getPassengerCount().get(cursor);
+		return this.dataAccessor.getDataStore().getPassengerCount().get(cursor);
 	}
 	
 	
 	public Integer getDistance() {
-		return this.dataAccessor.getTaxiRides().getDistance().get(cursor);
+		return this.dataAccessor.getDataStore().getDistance().get(cursor);
 	}
 	
 	
 	public Short getRating() {
-		return this.dataAccessor.getTaxiRides().getRating().get(cursor);
+		return this.dataAccessor.getDataStore().getRating().get(cursor);
 	}
 	
 	
 	public Character getStoreFwdFlag() {
-		return this.dataAccessor.getTaxiRides().getStoreFwdFlag().get(cursor);
+		return this.dataAccessor.getDataStore().getStoreFwdFlag().get(cursor);
 	}
 	
 	
 	public Integer getPickUpLocation() {
-		return this.dataAccessor.getTaxiRides().getPickUpLocation().get(cursor);
+		return this.dataAccessor.getDataStore().getPickUpLocation().get(cursor);
 	}
 	
 	
 	public Integer getDropOffLocation() {
-		return this.dataAccessor.getTaxiRides().getDropOffLocation().get(cursor);
+		return this.dataAccessor.getDataStore().getDropOffLocation().get(cursor);
 	}
 	
 	
 	public Integer getPaymentType() {
-		return this.dataAccessor.getTaxiRides().getPaymentType().get(cursor);
+		return this.dataAccessor.getDataStore().getPaymentType().get(cursor);
 	}
 	
 	
 	public Integer getFare() {
-		return this.dataAccessor.getTaxiRides().getFare().get(cursor);
+		return this.dataAccessor.getDataStore().getFare().get(cursor);
 	}
 	
 	
 	public Integer getExtra() {
-		return this.dataAccessor.getTaxiRides().getExtra().get(cursor);
+		return this.dataAccessor.getDataStore().getExtra().get(cursor);
 	}
 	
 	
 	public Integer getMtaTax() {
-		return this.dataAccessor.getTaxiRides().getMtaTax().get(cursor);
+		return this.dataAccessor.getDataStore().getMtaTax().get(cursor);
 	}
 	
 	
 	public Integer getTip() {
-		return this.dataAccessor.getTaxiRides().getTip().get(cursor);
+		return this.dataAccessor.getDataStore().getTip().get(cursor);
 	}
 	
 	
 	public Integer getTolls() {
-		return this.dataAccessor.getTaxiRides().getTolls().get(cursor);
+		return this.dataAccessor.getDataStore().getTolls().get(cursor);
 	}
 	
 	
 	public Integer getImprovementSurcharge() {
-		return this.dataAccessor.getTaxiRides().getImprovementSurcharge().get(cursor);
+		return this.dataAccessor.getDataStore().getImprovementSurcharge().get(cursor);
 	}
 	
 	
 	public Integer getTotalAmount() {
-		return this.dataAccessor.getTaxiRides().getTotalAmount().get(cursor);
+		return this.dataAccessor.getDataStore().getTotalAmount().get(cursor);
 	}
 	
 }

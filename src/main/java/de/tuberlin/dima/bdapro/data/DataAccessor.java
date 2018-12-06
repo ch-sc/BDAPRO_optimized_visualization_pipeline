@@ -9,7 +9,7 @@ import java.util.Vector;
 import java.util.stream.Stream;
 
 import de.tuberlin.dima.bdapro.error.BusinessException;
-import de.tuberlin.dima.bdapro.model.TaxiRides;
+import de.tuberlin.dima.bdapro.model.DataStore;
 import lombok.Getter;
 
 
@@ -20,7 +20,7 @@ public class DataAccessor {
 	@Getter
 	private int length = 0;
 	@Getter
-	private TaxiRides taxiRides;
+	private DataStore dataStore;
 	
 	@Getter
 	private File file;
@@ -34,7 +34,7 @@ public class DataAccessor {
 	public void loadData() {
 		clear();
 		
-		taxiRides = TaxiRides.builder()
+		dataStore = DataStore.builder()
 				.vendorId(new Vector<>())
 				.distance(new Vector<>())
 				.pickUpDate(new Vector<>())
@@ -65,28 +65,28 @@ public class DataAccessor {
 				String[] values = line.split(separator);
 				
 				int i = 0;
-				taxiRides.getVendorId().add(Integer.valueOf(values[i++]));
+				dataStore.getVendorId().add(Integer.valueOf(values[i++]));
 				i++;
-//				taxiRides.getPickUpDate().add();
+//				dataStore.getPickUpDate().add();
 				i++;
-//				taxiRides.getDropOffDate().add();
-				taxiRides.getPassengerCount().add(Integer.valueOf(values[i++]));
-				taxiRides.getDistance().add((int) (Double.valueOf(values[i++]) * 100));
-				taxiRides.getRating().add(Short.valueOf(values[i++]));
-				taxiRides.getStoreFwdFlag().add(values[i++].charAt(0));
-				taxiRides.getPickUpLocation().add(Integer.valueOf(values[i++]));
-				taxiRides.getDropOffLocation().add(Integer.valueOf(values[i++]));
-				taxiRides.getPaymentType().add(Integer.valueOf(values[i++]));
-				taxiRides.getFare().add((int) (Double.valueOf(values[i++]) * 100));
-				taxiRides.getExtra().add((int) (Double.valueOf(values[i++]) * 100));
-				taxiRides.getMtaTax().add((int) (Double.valueOf(values[i++]) * 100));
-				taxiRides.getTip().add((int) (Double.valueOf(values[i++]) * 100));
-				taxiRides.getTolls().add((int) (Double.valueOf(values[i++]) * 100));
-				taxiRides.getImprovementSurcharge().add((int) (Double.valueOf(values[i++]) * 100));
-				taxiRides.getTotalAmount().add((int) (Double.valueOf(values[i]) * 100));
+//				dataStore.getDropOffDate().add();
+				dataStore.getPassengerCount().add(Integer.valueOf(values[i++]));
+				dataStore.getDistance().add((int) (Double.valueOf(values[i++]) * 100));
+				dataStore.getRating().add(Short.valueOf(values[i++]));
+				dataStore.getStoreFwdFlag().add(values[i++].charAt(0));
+				dataStore.getPickUpLocation().add(Integer.valueOf(values[i++]));
+				dataStore.getDropOffLocation().add(Integer.valueOf(values[i++]));
+				dataStore.getPaymentType().add(Integer.valueOf(values[i++]));
+				dataStore.getFare().add((int) (Double.valueOf(values[i++]) * 100));
+				dataStore.getExtra().add((int) (Double.valueOf(values[i++]) * 100));
+				dataStore.getMtaTax().add((int) (Double.valueOf(values[i++]) * 100));
+				dataStore.getTip().add((int) (Double.valueOf(values[i++]) * 100));
+				dataStore.getTolls().add((int) (Double.valueOf(values[i++]) * 100));
+				dataStore.getImprovementSurcharge().add((int) (Double.valueOf(values[i++]) * 100));
+				dataStore.getTotalAmount().add((int) (Double.valueOf(values[i]) * 100));
 			}
 			
-			length = taxiRides.getVendorId().size();
+			length = dataStore.getVendorId().size();
 		} catch (FileNotFoundException e) {
 			throw new BusinessException("File [" + file.getName() + "] not found: " + e.getMessage(), e);
 		} catch (IOException e) {
@@ -103,68 +103,68 @@ public class DataAccessor {
 	private void clear() {
 		cursor = -1;
 		length = 0;
-		taxiRides = null;
+		dataStore = null;
 	}
 
 
 	public Integer getVendorId() {
-		return taxiRides.getVendorId().get(cursor);
+		return dataStore.getVendorId().get(cursor);
 	}
 
 	public Integer getPassengerCount() {
-		return taxiRides.getPassengerCount().get(cursor);
+		return dataStore.getPassengerCount().get(cursor);
 	}
 
 	public Integer getDistance() {
-		return taxiRides.getDistance().get(cursor);
+		return dataStore.getDistance().get(cursor);
 	}
 
 	public Short getRating() {
-		return taxiRides.getRating().get(cursor);
+		return dataStore.getRating().get(cursor);
 	}
 
 	public Character getStoreFwdFlag() {
-		return taxiRides.getStoreFwdFlag().get(cursor);
+		return dataStore.getStoreFwdFlag().get(cursor);
 	}
 
 	public Integer getPickUpLocation() {
-		return taxiRides.getPickUpLocation().get(cursor);
+		return dataStore.getPickUpLocation().get(cursor);
 	}
 
 	public Integer getDropOffLocation() {
-		return taxiRides.getDropOffLocation().get(cursor);
+		return dataStore.getDropOffLocation().get(cursor);
 	}
 
 	public Integer getPaymentType() {
-		return taxiRides.getPaymentType().get(cursor);
+		return dataStore.getPaymentType().get(cursor);
 	}
 
 	public Integer getFare() {
-		return taxiRides.getFare().get(cursor);
+		return dataStore.getFare().get(cursor);
 	}
 
 	public Integer getExtra() {
-		return taxiRides.getExtra().get(cursor);
+		return dataStore.getExtra().get(cursor);
 	}
 
 	public Integer getMtaTax() {
-		return taxiRides.getMtaTax().get(cursor);
+		return dataStore.getMtaTax().get(cursor);
 	}
 
 	public Integer getTip() {
-		return taxiRides.getTip().get(cursor);
+		return dataStore.getTip().get(cursor);
 	}
 
 	public Integer getTolls() {
-		return taxiRides.getTolls().get(cursor);
+		return dataStore.getTolls().get(cursor);
 	}
 
 	public Integer getImprovementSurcharge() {
-		return taxiRides.getImprovementSurcharge().get(cursor);
+		return dataStore.getImprovementSurcharge().get(cursor);
 	}
 
 	public Integer getTotalAmount() {
-		return taxiRides.getTotalAmount().get(cursor);
+		return dataStore.getTotalAmount().get(cursor);
 	}
 	
 	

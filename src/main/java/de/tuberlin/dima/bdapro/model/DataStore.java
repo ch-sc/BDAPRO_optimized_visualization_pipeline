@@ -7,7 +7,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class TaxiRides {
+public class DataStore {
 	
 	private Vector<Integer>   vendorId;
 	private Vector<Long> 	  pickUpDate;
