@@ -1,4 +1,4 @@
-package de.tuberlin.dima.bdapro.data;
+package de.tuberlin.dima.bdapro.data.taxi;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -9,6 +9,7 @@ import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
 import de.tuberlin.dima.bdapro.config.AppConfig;
+import de.tuberlin.dima.bdapro.data.DataProcessor;
 import de.tuberlin.dima.bdapro.error.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
@@ -104,6 +105,12 @@ public class FlinkDataProcessor extends DataProcessor {
 			timer.stop();
 			log.info("Elapsed time of Flink processing: " + timer.getTime() + "ms");
 		}
+	}
+	
+	
+	@Override
+	public int[][] scatterPlot() {
+		return new int[0][];
 	}
 	
 	
