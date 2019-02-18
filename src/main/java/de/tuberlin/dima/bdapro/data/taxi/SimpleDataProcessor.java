@@ -1,6 +1,6 @@
 package de.tuberlin.dima.bdapro.data.taxi;
 
-import de.tuberlin.dima.bdapro.config.AppConfig;
+import de.tuberlin.dima.bdapro.config.DataConfig;
 import de.tuberlin.dima.bdapro.data.DataProcessor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.StopWatch;
@@ -8,10 +8,10 @@ import org.apache.commons.lang3.time.StopWatch;
 @Slf4j
 public class SimpleDataProcessor extends DataProcessor {
 	
-	private AppConfig config;
+	private DataConfig config;
 	private TaxiRide taxiRide;
 	
-	public SimpleDataProcessor(AppConfig config, TaxiRide taxiRide) {
+	public SimpleDataProcessor(DataConfig config, TaxiRide taxiRide) {
 		this.config = config;
 		this.taxiRide = taxiRide;
 	}
@@ -24,6 +24,8 @@ public class SimpleDataProcessor extends DataProcessor {
 		
 		int maxDistance = 0;
 		int maxFare = 0;
+		
+		taxiRide.reset();
 		
 		while (taxiRide.next()) {
 			if (maxDistance < taxiRide.getDistance())

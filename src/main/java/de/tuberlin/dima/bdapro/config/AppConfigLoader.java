@@ -20,14 +20,14 @@ public class AppConfigLoader {
 	private static String configLocation = null;
 	
 	
-	public static AppConfig load(String configLocationPath) {
+	public static DataConfig load(String configLocationPath) {
 		
 		configLocation = configLocationPath == null ? "src/main/resources/" : configLocationPath;
 		
 		ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
 		
 		try {
-			AppConfig config = mapper.readValue(new File(configLocation, CONFIG_FILE), AppConfig.class);
+			DataConfig config = mapper.readValue(new File(configLocation, CONFIG_FILE), DataConfig.class);
 			
 			log.info(config.toString()/* ReflectionToStringBuilder.toString(config, ToStringStyle.MULTI_LINE_STYLE)*/);
 			

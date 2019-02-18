@@ -5,11 +5,12 @@ import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import lombok.Getter;
+import lombok.Setter;
 
 
 public class GenericDataAccessor<T> implements IDataAccessor {
 	
-	@Getter
+	@Getter @Setter
 	protected int cursor = -1;
 	@Getter
 	protected int length = 0;

@@ -1,1 +1,10 @@
-data-location: "data/small_test-12.csv"
+spring:
+  application:
+    name: visualisation-pipeline-service
+  jackson:
+    default-property-inclusion: NON_NULL
+    date-format: com.fasterxml.jackson.databind.util.ISO8601DateFormat
+
+service:
+  data:
+    data-location: "data/small_test-12.csv"

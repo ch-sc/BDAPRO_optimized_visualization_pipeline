@@ -1,14 +1,14 @@
 package de.tuberlin.dima.bdapro.config;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 
 @Getter
+@Setter
 @ToString
-public class AppConfig {
+public class DataConfig {
 
-	@JsonProperty("data-location")
 	private String dataLocation;
 	
 

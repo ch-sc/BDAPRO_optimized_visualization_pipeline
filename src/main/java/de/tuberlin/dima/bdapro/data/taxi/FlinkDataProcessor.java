@@ -8,7 +8,7 @@ import java.util.Spliterators;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
-import de.tuberlin.dima.bdapro.config.AppConfig;
+import de.tuberlin.dima.bdapro.config.DataConfig;
 import de.tuberlin.dima.bdapro.data.DataProcessor;
 import de.tuberlin.dima.bdapro.error.BusinessException;
 import lombok.extern.slf4j.Slf4j;
@@ -26,11 +26,11 @@ import org.apache.flink.util.Collector;
 @Slf4j
 public class FlinkDataProcessor extends DataProcessor {
 	
-	private AppConfig config;
+	private DataConfig config;
 	private ExecutionEnvironment env;
 	
 	
-	public FlinkDataProcessor(AppConfig config, ExecutionEnvironment env) {
+	public FlinkDataProcessor(DataConfig config, ExecutionEnvironment env) {
 		this.config = config;
 		this.env = env;
 	}

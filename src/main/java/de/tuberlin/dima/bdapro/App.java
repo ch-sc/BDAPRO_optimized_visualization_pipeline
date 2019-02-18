@@ -3,21 +3,19 @@ package de.tuberlin.dima.bdapro;
 import java.io.File;
 import java.util.Arrays;
 
-import de.tuberlin.dima.bdapro.config.AppConfig;
+import de.tuberlin.dima.bdapro.config.DataConfig;
 import de.tuberlin.dima.bdapro.config.AppConfigLoader;
-import de.tuberlin.dima.bdapro.data.GenericDataAccessor;
+import de.tuberlin.dima.bdapro.config.ServiceConfiguration;
 import de.tuberlin.dima.bdapro.data.DataProcessor;
+import de.tuberlin.dima.bdapro.data.GenericDataAccessor;
 import de.tuberlin.dima.bdapro.data.taxi.FlinkDataProcessor;
 import de.tuberlin.dima.bdapro.data.taxi.ParallelDataProcessor;
 import de.tuberlin.dima.bdapro.data.taxi.SimpleDataProcessor;
 import de.tuberlin.dima.bdapro.data.taxi.TaxiRide;
+import de.tuberlin.dima.bdapro.model.ExecutionType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
-import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.util.Collector;
 
 @Slf4j
 public class App {
@@ -25,8 +23,7 @@ public class App {
 	public static void main(String[] args) {
 		log.info("App args: " + Arrays.toString(args));
 		
-		DataProcessor dataProcessor;
-		AppConfig config;
+		DataConfig config;
 		try {
 			config = AppConfigLoader.load(null);
 		} catch (Throwable e) {
@@ -35,38 +32,36 @@ public class App {
 			return;
 		}
 		
-		ExecutionType executionType = ExecutionType.NATIVE;
+		ExecutionType executionType = ExecutionType.SEQUENTIAL;
 		
 		if (args.length > 0) {
 			String arg1 = args[0];
-			if (arg1.equalsIgnoreCase("flink")) {
+			if (arg1.equalsIgnoreCase("flink") || arg1.equalsIgnoreCase("streamed")) {
 				executionType = ExecutionType.FLINK;
-			} else if (arg1.equalsIgnoreCase("native")) {
-				executionType = ExecutionType.NATIVE;
+			} else if (arg1.equalsIgnoreCase("sequential") || arg1.equalsIgnoreCase("seq")) {
+				executionType = ExecutionType.SEQUENTIAL;
 			} else if (arg1.equalsIgnoreCase("parallel")) {
-				executionType = ExecutionType.NATIVE_PARALLEL;
+				executionType = ExecutionType.PARALLEL;
 			} else {
 				throw new IllegalArgumentException("first parameter specifies execution type. Can be " + Arrays
 						.toString(ExecutionType.values()));
 			}
 		}
 		
+		final DataProcessor dataProcessor = ServiceConfiguration.dataProcessor(executionType, config);
 		int x = 1000, y = 1000;
+		
 		
 		int[][] scatter;
 		switch (executionType) {
-			case NATIVE:
-				
-				dataProcessor = new SimpleDataProcessor(config, loadTaxiData(config));
+			case SEQUENTIAL:
 				scatter = dataProcessor.scatterPlot(x, y);
 				break;
-			case NATIVE_PARALLEL:
-				dataProcessor = new ParallelDataProcessor(loadTaxiData(config));
+			case PARALLEL:
 				scatter = dataProcessor.scatterPlot(x, y);
 				break;
 			case FLINK:
 			default:
-				dataProcessor = new FlinkDataProcessor(config, ExecutionEnvironment.getExecutionEnvironment());
 				scatter = dataProcessor.scatterPlot(x, y);
 				break;
 		}
@@ -87,17 +82,10 @@ public class App {
 	}
 	
 	
-	public static TaxiRide loadTaxiData(AppConfig config) {
+	public static TaxiRide loadTaxiData(DataConfig config) {
 		GenericDataAccessor<TaxiRide> dataAccessor = new GenericDataAccessor<>(new File(config.getDataLocation()));
 		dataAccessor.loadData(TaxiRide::loadData);
 		return new TaxiRide(dataAccessor, dataAccessor.getCursor() + 0, dataAccessor.getLength());
-	}
-	
-	
-	private enum ExecutionType {
-		NATIVE,
-		NATIVE_PARALLEL,
-		FLINK
 	}
 	
 }
