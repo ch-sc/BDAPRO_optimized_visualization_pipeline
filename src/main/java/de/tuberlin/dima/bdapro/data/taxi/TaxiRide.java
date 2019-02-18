@@ -311,8 +311,9 @@ public class TaxiRide implements IDataAccessor, Streamable<TaxiRide> {
 			this.taxiRide = null;
 		}
 		
-		
-		private TaxiRideSpliterator(TaxiRide taxiRide, GenericDataAccessor dataAccessor) {
+	
+	public long estimateSize() {
+		return dataAccessor.getLength();
 			this.dataAccessor = dataAccessor;
 			this.taxiRide = taxiRide;
 			this.cursorOffset = taxiRide.getOffset();
@@ -329,7 +330,7 @@ public class TaxiRide implements IDataAccessor, Streamable<TaxiRide> {
 				return false;
 			}
 		}
-		
+	
 		
 		@Override
 		public Spliterator<TaxiRide> trySplit() {
@@ -358,13 +359,12 @@ public class TaxiRide implements IDataAccessor, Streamable<TaxiRide> {
 			cursorOffset += partialLength;
 			
 			return new TaxiRideSpliterator(taxiRide, dataAccessor);
-		}
+	}
 		
 		
-		@Override
-		public long estimateSize() {
-			return dataAccessor.getLength();
-		}
+	public int getLength() {
+		return dataAccessor.getLength();
+	}
 		
 		
 		@Override

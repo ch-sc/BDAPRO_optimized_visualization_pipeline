@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import javax.servlet.http.HttpServletResponse;
 
-import de.tuberlin.dima.bdapro.data.StreamedDataProcessor;
+import de.tuberlin.dima.bdapro.data.taxi.StreamDataProcessor;
 import de.tuberlin.dima.bdapro.error.ErrorType;
 import de.tuberlin.dima.bdapro.error.ErrorTypeException;
 import de.tuberlin.dima.bdapro.service.DataService;
@@ -21,19 +21,19 @@ import org.springframework.web.bind.annotation.RestController;
 public class ScatterPlotController {
 	
 	private final DataService dataService;
-	private final StreamedDataProcessor streamedDataProcessor;
+	private final StreamDataProcessor streamDataProcessor;
 	
 	
 	@Autowired
-	public ScatterPlotController(DataService dataService, StreamedDataProcessor streamedDataProcessor) {
+	public ScatterPlotController(DataService dataService, StreamDataProcessor streamDataProcessor) {
 		this.dataService = dataService;
-		this.streamedDataProcessor = streamedDataProcessor;
+		this.streamDataProcessor = streamDataProcessor;
 	}
 	
 	
 	@GetMapping(value = "/scatter")
-	public int[][] scatterPlot(@RequestParam(value = "x", required = false, defaultValue = "1000") Integer x,
-			@RequestParam(value = "y", required = false, defaultValue = "1000") Integer y) {
+	public int[][] scatterPlot(@RequestParam(value = "x", required = false) Integer x,
+			@RequestParam(value = "y", required = false) Integer y) throws ErrorTypeException {
 		
 		if (x == null && y == null) {
 			return dataService.scatterPlot();
@@ -55,7 +55,7 @@ public class ScatterPlotController {
 			HttpServletResponse response) {
 		
 		try (OutputStream out = response.getOutputStream()) {
-			streamedDataProcessor.streamedScatterPlot(xDim, yDim, out);
+			dataService.scatterPlot(xDim, yDim, out);
 		} catch (IOException e) {
 			throw new RuntimeException(ExceptionUtils.getMessage(e), e);
 		}

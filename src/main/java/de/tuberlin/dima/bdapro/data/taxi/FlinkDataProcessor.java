@@ -1,6 +1,5 @@
 package de.tuberlin.dima.bdapro.data.taxi;
 
-import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -11,7 +10,6 @@ import java.util.stream.StreamSupport;
 
 import de.tuberlin.dima.bdapro.config.DataConfig;
 import de.tuberlin.dima.bdapro.data.DataProcessor;
-import de.tuberlin.dima.bdapro.data.StreamedDataProcessor;
 import de.tuberlin.dima.bdapro.error.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
@@ -26,7 +24,7 @@ import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.util.Collector;
 
 @Slf4j
-public class FlinkDataProcessor extends StreamedDataProcessor {
+public class FlinkDataProcessor extends DataProcessor {
 	
 	private DataConfig config;
 	private ExecutionEnvironment env;
@@ -114,18 +112,6 @@ public class FlinkDataProcessor extends StreamedDataProcessor {
 	@Override
 	public int[][] scatterPlot() {
 		return new int[0][];
-	}
-	
-	
-	@Override
-	public void streamedScatterPlot(int x, int y, OutputStream outputStream) {
-	
-	}
-	
-	
-	@Override
-	public void streamedScatterPlot(OutputStream outputStream) {
-	
 	}
 	
 	

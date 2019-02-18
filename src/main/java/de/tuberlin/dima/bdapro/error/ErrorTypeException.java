@@ -2,7 +2,7 @@ package de.tuberlin.dima.bdapro.error;
 
 import lombok.Getter;
 
-public class ErrorTypeException extends RuntimeException {
+public class ErrorTypeException extends Exception {
 	
 	@Getter private final ErrorType errorType;
 	

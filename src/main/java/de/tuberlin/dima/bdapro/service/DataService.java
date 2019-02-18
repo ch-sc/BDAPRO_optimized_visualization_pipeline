@@ -3,6 +3,7 @@ package de.tuberlin.dima.bdapro.service;
 import java.io.OutputStream;
 
 import de.tuberlin.dima.bdapro.data.DataProcessor;
+import de.tuberlin.dima.bdapro.data.taxi.StreamDataProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -18,7 +19,10 @@ public class DataService {
 	private DataProcessor parallelDataProcessor;
 	@Autowired
 	@Qualifier("data-processor.flink")
-	private DataProcessor streamDataProcessor;
+	private DataProcessor flinkDataProcessor;
+	@Autowired
+	private StreamDataProcessor streamDataProcessor;
+	
 	
 	public int[][] scatterPlot(int x, int y) {
 		return sequentialDataProcessor.scatterPlot(x, y);
@@ -29,8 +33,9 @@ public class DataService {
 		return sequentialDataProcessor.scatterPlot();
 	}
 	
+	
 	public void scatterPlot(int xDim, int yDim, OutputStream outputStream) {
-		streamDataProcessor.scatterPlot(xDim, yDim);
+		streamDataProcessor.streamedScatterPlot(xDim, yDim, outputStream);
 	}
 	
 }

@@ -5,6 +5,7 @@ import java.util.Arrays;
 import de.tuberlin.dima.bdapro.config.AppConfigLoader;
 import de.tuberlin.dima.bdapro.config.DataConfig;
 import de.tuberlin.dima.bdapro.config.ServiceConfiguration;
+import de.tuberlin.dima.bdapro.config.ServiceProperties;
 import de.tuberlin.dima.bdapro.data.DataProcessor;
 import de.tuberlin.dima.bdapro.model.ExecutionType;
 import lombok.extern.slf4j.Slf4j;
@@ -42,8 +43,8 @@ public class App {
 		}
 		
 		final DataProcessor dataProcessor = ServiceConfiguration.dataProcessor(executionType, config);
-		int x = 1000, y = 1000;
 		
+		int x = 1000, y = 1000;
 		
 		int[][] scatter;
 		switch (executionType) {

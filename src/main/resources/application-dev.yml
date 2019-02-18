@@ -1,3 +1,11 @@
 service:
   data:
     data-location: "data/small_test-12.csv"
+  flink:
+    args:
+#     - "--input"
+#     - "data/small_test-12.csv"
+     - "--output"
+     - "data/out/fib-result"
+server:
+  port: 8082
