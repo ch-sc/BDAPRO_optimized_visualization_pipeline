@@ -4,6 +4,7 @@ import java.io.File;
 
 import de.tuberlin.dima.bdapro.data.DataProcessor;
 import de.tuberlin.dima.bdapro.data.GenericDataAccessor;
+import de.tuberlin.dima.bdapro.data.StreamedDataProcessor;
 import de.tuberlin.dima.bdapro.data.taxi.FlinkDataProcessor;
 import de.tuberlin.dima.bdapro.data.taxi.ParallelDataProcessor;
 import de.tuberlin.dima.bdapro.data.taxi.SimpleDataProcessor;
@@ -25,8 +26,8 @@ public class ServiceConfiguration {
 	
 	
 	@Bean("data-processor.flink")
-	public DataProcessor dataAccessorFlink() {
-		return dataProcessor(ExecutionType.FLINK, properties.getData());
+	public StreamedDataProcessor dataAccessorFlink() {
+		return (StreamedDataProcessor) dataProcessor(ExecutionType.FLINK, properties.getData());
 	}
 	
 	@Bean("data-processor.sequential")

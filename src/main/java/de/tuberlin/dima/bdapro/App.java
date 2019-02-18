@@ -1,21 +1,14 @@
 package de.tuberlin.dima.bdapro;
 
-import java.io.File;
 import java.util.Arrays;
 
-import de.tuberlin.dima.bdapro.config.DataConfig;
 import de.tuberlin.dima.bdapro.config.AppConfigLoader;
+import de.tuberlin.dima.bdapro.config.DataConfig;
 import de.tuberlin.dima.bdapro.config.ServiceConfiguration;
 import de.tuberlin.dima.bdapro.data.DataProcessor;
-import de.tuberlin.dima.bdapro.data.GenericDataAccessor;
-import de.tuberlin.dima.bdapro.data.taxi.FlinkDataProcessor;
-import de.tuberlin.dima.bdapro.data.taxi.ParallelDataProcessor;
-import de.tuberlin.dima.bdapro.data.taxi.SimpleDataProcessor;
-import de.tuberlin.dima.bdapro.data.taxi.TaxiRide;
 import de.tuberlin.dima.bdapro.model.ExecutionType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.flink.api.java.ExecutionEnvironment;
 
 @Slf4j
 public class App {
@@ -79,13 +72,6 @@ public class App {
 			stringBuffer.append("\n");
 		}
 		log.info(stringBuffer.toString());
-	}
-	
-	
-	public static TaxiRide loadTaxiData(DataConfig config) {
-		GenericDataAccessor<TaxiRide> dataAccessor = new GenericDataAccessor<>(new File(config.getDataLocation()));
-		dataAccessor.loadData(TaxiRide::loadData);
-		return new TaxiRide(dataAccessor, dataAccessor.getCursor() + 0, dataAccessor.getLength());
 	}
 	
 }

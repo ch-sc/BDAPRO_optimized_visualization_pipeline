@@ -1,6 +1,7 @@
 package de.tuberlin.dima.bdapro.service;
 
-import de.tuberlin.dima.bdapro.config.ServiceConfiguration;
+import java.io.OutputStream;
+
 import de.tuberlin.dima.bdapro.data.DataProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -10,14 +11,26 @@ import org.springframework.stereotype.Service;
 public class DataService {
 	
 	@Autowired
-	private ServiceConfiguration serviceConfiguration;
-	
-	@Autowired
 	@Qualifier("data-processor.sequential")
-	private DataProcessor dataProcessor;
+	private DataProcessor sequentialDataProcessor;
+	@Autowired
+	@Qualifier("data-processor.parallel")
+	private DataProcessor parallelDataProcessor;
+	@Autowired
+	@Qualifier("data-processor.flink")
+	private DataProcessor streamDataProcessor;
 	
-	
-	public int[][] scatterPlot(int x, int y){
-		return dataProcessor.scatterPlot(x, y);
+	public int[][] scatterPlot(int x, int y) {
+		return sequentialDataProcessor.scatterPlot(x, y);
 	}
+	
+	
+	public int[][] scatterPlot() {
+		return sequentialDataProcessor.scatterPlot();
+	}
+	
+	public void scatterPlot(int xDim, int yDim, OutputStream outputStream) {
+		streamDataProcessor.scatterPlot(xDim, yDim);
+	}
+	
 }
