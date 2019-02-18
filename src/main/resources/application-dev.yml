@@ -1,0 +1,3 @@
+service:
+  data:
+    data-location: "data/small_test-12.csv"

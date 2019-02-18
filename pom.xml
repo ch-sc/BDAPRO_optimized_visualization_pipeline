@@ -71,14 +71,6 @@
             <version>${spring.version}</version>
         </dependency>
 
-
-        <!--<dependency>-->
-            <!--<groupId>org.scala-lang</groupId>-->
-            <!--<artifactId>scala-compiler</artifactId>-->
-            <!--<version>${scala.version}</version>-->
-            <!--<scope>compile</scope>-->
-        <!--</dependency>-->
-
         <!-- APACHE FLINK -->
         <dependency>
             <groupId>org.apache.flink</groupId>
@@ -90,22 +82,6 @@
             <artifactId>flink-clients_2.11</artifactId>
             <version>${flink.version}</version>
         </dependency>
-        <!--<dependency>-->
-            <!--<groupId>org.scala-lang</groupId>-->
-            <!--<artifactId>scala-compiler</artifactId>-->
-            <!--<version>${scala.version}</version>-->
-            <!--<scope>compile</scope>-->
-        <!--</dependency>-->
-        <!--<dependency>-->
-        <!--<groupId>org.apache.flink</groupId>-->
-        <!--<artifactId>flink-scala_2.11</artifactId>-->
-        <!--<version>${flink.version}</version>-->
-        <!--</dependency>-->
-        <!--<dependency>-->
-        <!--<groupId>org.apache.flink</groupId>-->
-        <!--<artifactId>flink-gelly-scala_2.11</artifactId>-->
-        <!--<version>${flink.version}</version>-->
-        <!--</dependency>-->
 
         <!-- Parquet Parser/Writer -->
         <dependency>
