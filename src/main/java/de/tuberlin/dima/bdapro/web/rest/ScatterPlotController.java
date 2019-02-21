@@ -3,6 +3,9 @@ package de.tuberlin.dima.bdapro.web.rest;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import javax.websocket.server.PathParam;
 
@@ -13,8 +16,13 @@ import de.tuberlin.dima.bdapro.model.ExecutionType;
 import de.tuberlin.dima.bdapro.service.DataService;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.extern.java.Log;
+import lombok.extern.log4j.Log4j;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.flink.runtime.util.IntArrayList;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/2d")
+@Log4j2
 public class ScatterPlotController {
 	
 	private final DataService dataService;
@@ -47,12 +56,14 @@ public class ScatterPlotController {
 	}
 	
 	
-	@GetMapping(value = "/scatter")
-	public int[][] scatterPlot(@ModelAttribute("bounds") DimensionalityBounds bounds) throws ErrorTypeException {
+	@GetMapping(value = "/scatter", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+	public Object[] scatterPlot(@ModelAttribute("bounds") DimensionalityBounds bounds) throws ErrorTypeException {
 		if (bounds.isUnbound()) {
 			return dataService.scatterPlot();
 		}
-		return dataService.scatterPlot(bounds.x, bounds.y);
+		
+		final int[][] dataGrid = dataService.scatterPlot(bounds.x, bounds.y);
+		return convert(dataGrid);
 	}
 	
 	
@@ -68,10 +79,26 @@ public class ScatterPlotController {
 	}
 	
 	
+	private Object[] convert(int[][] grid) {
+		List<int[]> list = new ArrayList<>(grid.length);
+		
+		for (int i = 0; i < grid.length; i++) {
+			final int[] row = grid[i];
+			for (int j = 0; j < row.length; j++) {
+				if (row[j] == 0) {
+					continue;
+				}
+				list.add(new int[] { i, j, row[j] });
+			}
+		}
+		return list.toArray();
+	}
+	
+	
 	static class DimensionalityBounds {
 		
-		private Integer x;
-		private Integer y;
+		final private Integer x;
+		final private Integer y;
 		
 		
 		DimensionalityBounds(Integer x, Integer y) {
