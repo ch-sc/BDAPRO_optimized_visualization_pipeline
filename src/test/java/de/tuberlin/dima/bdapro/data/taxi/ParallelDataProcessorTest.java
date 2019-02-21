@@ -2,7 +2,7 @@ package de.tuberlin.dima.bdapro.data.taxi;
 
 import java.io.File;
 
-import de.tuberlin.dima.bdapro.config.AppConfig;
+import de.tuberlin.dima.bdapro.config.DataConfig;
 import de.tuberlin.dima.bdapro.config.AppConfigLoader;
 import de.tuberlin.dima.bdapro.data.DataProcessor;
 import de.tuberlin.dima.bdapro.data.GenericDataAccessor;
@@ -24,16 +24,16 @@ public class ParallelDataProcessorTest {
 //		init();
 	}
 	
-	private static TaxiRide loadTaxiData(AppConfig config) {
-		dataAccessor = new GenericDataAccessor<>(new File(config.getDataLocation()));
-		dataAccessor.loadData(TaxiRide::loadData);
-		return new TaxiRide(dataAccessor, dataAccessor.getCursor() + 0, dataAccessor.getLength());
-	}
-	
 	
 	private static void init() {
-		AppConfig config = AppConfigLoader.load(null);
-		dataProcessor = new SimpleDataProcessor(config, loadTaxiData(config));
+		DataConfig config = AppConfigLoader.load(null);
+		dataProcessor = new ParallelDataProcessor(loadTaxiData(config));
+	}
+	
+	private static TaxiRide loadTaxiData(DataConfig config) {
+		dataAccessor = new GenericDataAccessor<>(new File(config.getDataLocation()));
+		dataAccessor.loadData(TaxiRide::loadData);
+		return new TaxiRide(dataAccessor, dataAccessor.getCursor(), dataAccessor.getLength());
 	}
 	
 	
@@ -49,7 +49,7 @@ public class ParallelDataProcessorTest {
 	}
 	
 	@Before
-	public void setUp() throws Exception {
+	public void setUp() {
 		dataAccessor.reset();
 	}
 	

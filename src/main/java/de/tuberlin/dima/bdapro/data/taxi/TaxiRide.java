@@ -140,23 +140,33 @@ public class TaxiRide implements IDataAccessor, Streamable<TaxiRide> {
 			
 			DataStore dataStore = dataAccessor.getDataStore();
 			
-			dataStore.putColumn(VENDOR_ID_KEY, ArrayUtils.toPrimitive(vendorIds.toArray(new Integer[vendorIds.size()])));
+			dataStore
+					.putColumn(VENDOR_ID_KEY, ArrayUtils.toPrimitive(vendorIds.toArray(new Integer[vendorIds.size()])));
 			dataStore.putColumn(DISTANCE_KEY, ArrayUtils.toPrimitive(distances.toArray(new Integer[vendorIds.size()])));
-			dataStore.putColumn(PICK_UP_DATE_KEY, ArrayUtils.toPrimitive(pickUpDate.toArray(new Long[vendorIds.size()])));
-			dataStore.putColumn(DROP_OFF_DATE_KEY, ArrayUtils.toPrimitive(dropOffDates.toArray(new Long[vendorIds.size()])));
-			dataStore.putColumn(PASSENGER_KEY, ArrayUtils.toPrimitive(passengers.toArray(new Integer[vendorIds.size()])));
+			dataStore.putColumn(PICK_UP_DATE_KEY,
+					ArrayUtils.toPrimitive(pickUpDate.toArray(new Long[vendorIds.size()])));
+			dataStore.putColumn(DROP_OFF_DATE_KEY,
+					ArrayUtils.toPrimitive(dropOffDates.toArray(new Long[vendorIds.size()])));
+			dataStore.putColumn(PASSENGER_KEY,
+					ArrayUtils.toPrimitive(passengers.toArray(new Integer[vendorIds.size()])));
 			dataStore.putColumn(RATING_KEY, ArrayUtils.toPrimitive(ratings.toArray(new Short[vendorIds.size()])));
-			dataStore.putColumn(STORED_FWD_KEY, ArrayUtils.toPrimitive(storeFwdFlags.toArray(new Character[vendorIds.size()])));
-			dataStore.putColumn(PICK_UP_LOCATION_KEY, ArrayUtils.toPrimitive(pickUpLocations.toArray(new Integer[vendorIds.size()])));
-			dataStore.putColumn(DROP_OFF_LOCATION_KEY, ArrayUtils.toPrimitive(dropOffLocations.toArray(new Integer[vendorIds.size()])));
-			dataStore.putColumn(PAYMENT_KEY, ArrayUtils.toPrimitive(paymentTypes.toArray(new Integer[vendorIds.size()])));
+			dataStore.putColumn(STORED_FWD_KEY,
+					ArrayUtils.toPrimitive(storeFwdFlags.toArray(new Character[vendorIds.size()])));
+			dataStore.putColumn(PICK_UP_LOCATION_KEY,
+					ArrayUtils.toPrimitive(pickUpLocations.toArray(new Integer[vendorIds.size()])));
+			dataStore.putColumn(DROP_OFF_LOCATION_KEY,
+					ArrayUtils.toPrimitive(dropOffLocations.toArray(new Integer[vendorIds.size()])));
+			dataStore.putColumn(PAYMENT_KEY,
+					ArrayUtils.toPrimitive(paymentTypes.toArray(new Integer[vendorIds.size()])));
 			dataStore.putColumn(FARE_KEY, ArrayUtils.toPrimitive(fares.toArray(new Integer[vendorIds.size()])));
 			dataStore.putColumn(EXTRA_KEY, ArrayUtils.toPrimitive(extras.toArray(new Integer[vendorIds.size()])));
 			dataStore.putColumn(MTA_TAX_KEY, ArrayUtils.toPrimitive(mtaTaxes.toArray(new Integer[vendorIds.size()])));
 			dataStore.putColumn(TIP_KEY, ArrayUtils.toPrimitive(tips.toArray(new Integer[vendorIds.size()])));
 			dataStore.putColumn(TOLLS_KEY, ArrayUtils.toPrimitive(tolls.toArray(new Integer[vendorIds.size()])));
-			dataStore.putColumn(IMPRoVEMENT_SURCHARGE_KEY, ArrayUtils.toPrimitive(improvementSurcharges.toArray(new Integer[vendorIds.size()])));
-			dataStore.putColumn(TOTAL_AMOUNT_KEY, ArrayUtils.toPrimitive(totalAmounts.toArray(new Integer[vendorIds.size()])));
+			dataStore.putColumn(IMPRoVEMENT_SURCHARGE_KEY,
+					ArrayUtils.toPrimitive(improvementSurcharges.toArray(new Integer[vendorIds.size()])));
+			dataStore.putColumn(TOTAL_AMOUNT_KEY,
+					ArrayUtils.toPrimitive(totalAmounts.toArray(new Integer[vendorIds.size()])));
 			
 			
 			return vendorIds.size();
@@ -291,85 +301,25 @@ public class TaxiRide implements IDataAccessor, Streamable<TaxiRide> {
 	}
 	
 	
-	public Stream<TaxiRide> stream() {
-		return StreamSupport.stream(new TaxiRide.TaxiRideSpliterator(new TaxiRide(this.dataAccessor, 0, this.dataAccessor.getLength()), this.dataAccessor), true);
+	public int getLastCursorIndex() {
+		return offset + partialLength;
 	}
 	
 	
-	public static class TaxiRideSpliterator implements Spliterator<TaxiRide> {
-		
-		
-		private final GenericDataAccessor dataAccessor;
-		private final int MIN_WORKLOAD_THRESHOLD = 5000;
-		@Getter
-		private final TaxiRide taxiRide;
-		private int cursorOffset = 0;
-		
-		
-		public TaxiRideSpliterator(GenericDataAccessor dataAccessor) {
-			this.dataAccessor = dataAccessor;
-			this.taxiRide = null;
-		}
-		
+	public Stream<TaxiRide> stream() {
+		return StreamSupport
+				.stream(new TaxiRideSpliterator(new TaxiRide(this.dataAccessor, 0, this.dataAccessor.getLength()),
+						this.dataAccessor), true);
+	}
+	
 	
 	public long estimateSize() {
 		return dataAccessor.getLength();
-			this.dataAccessor = dataAccessor;
-			this.taxiRide = taxiRide;
-			this.cursorOffset = taxiRide.getOffset();
-		}
-		
-		
-		@Override
-		public boolean tryAdvance(Consumer<? super TaxiRide> action) {
-			if (taxiRide.hasNext()) {
-				taxiRide.next();
-				action.accept(this.getTaxiRide());
-				return true;
-			} else {
-				return false;
-			}
-		}
-	
-		
-		@Override
-		public Spliterator<TaxiRide> trySplit() {
-			if (!dataAccessor.hasNext()) {
-				return null;
-			}
-			
-			int skipped = Math.max(0, dataAccessor.getCursor());
-			int rowsToProcess = dataAccessor.getLength() - skipped;
-			int remainingRows = rowsToProcess - cursorOffset;
-			if (remainingRows <= 0) {
-				return null;
-			} else if (remainingRows < MIN_WORKLOAD_THRESHOLD) {
-				TaxiRide taxiRide = new TaxiRide(dataAccessor, cursorOffset, dataAccessor.getLength());
-				cursorOffset = dataAccessor.getLength();
-				return new TaxiRideSpliterator(taxiRide, dataAccessor);
-			}
-			
-			int cores = Runtime.getRuntime().availableProcessors();
-			int batchSize = Math.floorDiv(rowsToProcess, cores);
-			int rest = rowsToProcess % cores;
-			int partialLength = batchSize + rest;
-			
-			TaxiRide taxiRide = new TaxiRide(dataAccessor, cursorOffset, partialLength);
-			
-			cursorOffset += partialLength;
-			
-			return new TaxiRideSpliterator(taxiRide, dataAccessor);
 	}
-		
-		
+	
+	
 	public int getLength() {
 		return dataAccessor.getLength();
 	}
-		
-		
-		@Override
-		public int characteristics() {
-			return Spliterator.NONNULL | Spliterator.IMMUTABLE | Spliterator.SIZED;
-		}
-	}
+	
 }
