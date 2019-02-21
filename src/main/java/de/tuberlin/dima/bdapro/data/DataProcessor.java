@@ -7,5 +7,7 @@ public abstract class DataProcessor {
 	
 	abstract public int[][] scatterPlot(int xBound, int yBound);
 	
+	abstract public int[][] scatterPlot();
+	
 	
 }

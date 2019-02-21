@@ -1,5 +1,7 @@
-package de.tuberlin.dima.bdapro.data;
+package de.tuberlin.dima.bdapro.data.taxi;
 
+import de.tuberlin.dima.bdapro.data.GenericDataAccessor;
+import de.tuberlin.dima.bdapro.data.DataProcessor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.flink.api.java.tuple.Tuple2;
@@ -7,13 +9,12 @@ import org.apache.flink.api.java.tuple.Tuple2;
 @Slf4j
 public class ParallelDataProcessor extends DataProcessor {
 	
-	private DataAccessor dataAccessor;
+	private TaxiRide taxiRide;
 	
 	
-	public ParallelDataProcessor(DataAccessor dataAccessor) {
-		this.dataAccessor = dataAccessor;
+	public ParallelDataProcessor(TaxiRide taxiRide) {
+		this.taxiRide = taxiRide;
 	}
-	
 	
 	@Override
 	public int[][] scatterPlot(int xBound, int yBound) {
@@ -22,7 +23,7 @@ public class ParallelDataProcessor extends DataProcessor {
 		int maxDistance;
 		int maxFare;
 		
-		Tuple2<Integer, Integer> maxValuesTuple = dataAccessor.stream()
+		Tuple2<Integer, Integer> maxValuesTuple = taxiRide.stream()
 				.reduce(new Tuple2<>(0, 0),
 						(tuple, taxiRide) -> {
 							if (taxiRide.getDistance() > tuple.f0) {
@@ -47,16 +48,22 @@ public class ParallelDataProcessor extends DataProcessor {
 		maxFare = maxValuesTuple.f1;
 		
 		int[][] scatterPlot = new int[xBound][yBound];
-		dataAccessor.stream()
+		taxiRide.stream()
 				.forEach(taxiRide -> scatterPlot
-						[Math.max(0, (int) (((double) dataAccessor.getDistance() / maxDistance) * xBound) -1)]
-						[Math.max(0, (int) (((double) dataAccessor.getFare() / maxFare) * yBound) - 1)]++
+						[Math.max(0, (int) (((double) this.taxiRide.getDistance() / maxDistance) * xBound) -1)]
+						[Math.max(0, (int) (((double) this.taxiRide.getFare() / maxFare) * yBound) - 1)]++
 				);
 		
 		timer.stop();
 		log.info("elapsed time for parallel streamed data: " + timer.getTime() + "ms");
 		
 		return scatterPlot;
+	}
+	
+	
+	@Override
+	public int[][] scatterPlot() {
+		return new int[0][];
 	}
 	
 }
