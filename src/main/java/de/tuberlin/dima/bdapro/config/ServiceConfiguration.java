@@ -59,8 +59,11 @@ public class ServiceConfiguration {
 	public DataProcessor dataAccessorParallel() {
 		return dataProcessor(ExecutionType.PARALLEL, properties.getData());
 	}
-	
-	
+
+
+	/*Definierte entität, die zu späterem Zeitpunkt instantiiert und benutzt werden kann. Bekommen stream processor zurück
+	* Spirng properties werden in dieser Klasse instantiiert, e.g. config für flink und output und input files.
+	* */
 	@Bean
 	public StreamDataProcessor streamDataProcessor() {
 		// obtain execution environment and set setBufferTimeout to 1 to enable
@@ -103,6 +106,7 @@ public class ServiceConfiguration {
 	private static TaxiRide loadTaxiData(DataConfig config) {
 		// ToDo: switch to a more generic approach
 		// ToDo: load data from different data sources -> use JClouds or Hadoop
+
 		GenericDataAccessor<TaxiRide> dataAccessor = new GenericDataAccessor<>(new File(config.getDataLocation()));
 		dataAccessor.loadData(TaxiRide::loadData);
 		return new TaxiRide(dataAccessor, dataAccessor.getCursor() + 0, dataAccessor.getLength());
@@ -253,7 +257,7 @@ public class ServiceConfiguration {
 		
 		@Override
 		public void run(SourceContext<Tuple2<Integer, Integer>> ctx) throws Exception {
-			
+
 			while (isRunning && counter < BOUND) {
 				int first = rnd.nextInt(BOUND);
 				int second = rnd.nextInt(BOUND);

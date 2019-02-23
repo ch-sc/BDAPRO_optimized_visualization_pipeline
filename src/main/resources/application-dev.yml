@@ -1,11 +1,11 @@
 service:
   data:
-    data-location: "data/small_test-12.csv"
+    data-location: "/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/1000000.csv"
   flink:
     args:
 #     - "--input"
-#     - "data/small_test-12.csv"
+#     - "/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/1000000.csv"
      - "--output"
-     - "data/out/fib-result"
+     - "/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/fib-result"
 server:
   port: 8082
