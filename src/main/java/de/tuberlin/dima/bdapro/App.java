@@ -16,7 +16,7 @@ public class App {
 	
 	public static void main(String[] args) {
 		log.info("App args: " + Arrays.toString(args));
-		
+		/*
 		DataConfig config;
 		try {
 			config = AppConfigLoader.load(null);
@@ -24,8 +24,8 @@ public class App {
 //			e.printStackTrace();
 			log.error("Could not start application: " + ExceptionUtils.getMessage(e), e);
 			return;
-		}
-		
+		}*/
+		/*
 		ExecutionType executionType = ExecutionType.SEQUENTIAL;
 		
 		if (args.length > 0) {
@@ -36,16 +36,18 @@ public class App {
 				executionType = ExecutionType.SEQUENTIAL;
 			} else if (arg1.equalsIgnoreCase("parallel")) {
 				executionType = ExecutionType.PARALLEL;
-			} else {
+			} else if (arg1.equalsIgnoreCase("simpleStreaming")) {
+				executionType = ExecutionType.SIMPLESTREAMING;
+			}else {
 				throw new IllegalArgumentException("first parameter specifies execution type. Can be " + Arrays
 						.toString(ExecutionType.values()));
 			}
-		}
+		}*/
 		
-		final DataProcessor dataProcessor = ServiceConfiguration.dataProcessor(executionType, config);
+		final DataProcessor dataProcessor = ServiceConfiguration.dataProcessor(ExecutionType.SIMPLESTREAMING, null);
 		
 		int x = 1000, y = 1000;
-		
+		/*
 		int[][] scatter;
 		switch (executionType) {
 			case SEQUENTIAL:
@@ -60,7 +62,12 @@ public class App {
 				break;
 		}
 		
-		logResult(scatter, x, y);
+		logResult(scatter, x, y);*/
+
+		System.out.println("I'm here.");
+
+		dataProcessor.scatterPlot(x,y);
+
 	}
 	
 	

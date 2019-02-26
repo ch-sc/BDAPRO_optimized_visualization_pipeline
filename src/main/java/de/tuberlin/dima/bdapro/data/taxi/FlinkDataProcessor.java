@@ -21,6 +21,7 @@ import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.io.CsvReader;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.Collector;
 
 @Slf4j
@@ -28,15 +29,21 @@ public class FlinkDataProcessor extends DataProcessor {
 	
 	private DataConfig config;
 	private ExecutionEnvironment env;
+	private StreamExecutionEnvironment sEnv;
 	
 	
 	public FlinkDataProcessor(DataConfig config, ExecutionEnvironment env) {
 		this.config = config;
 		this.env = env;
 	}
-	
-	
-	public int[][] scatterPlot(int xBound, int yBound) {
+
+    public FlinkDataProcessor(DataConfig config, StreamExecutionEnvironment env) {
+        this.config = config;
+        this.sEnv = env;
+    }
+
+
+    public int[][] scatterPlot(int xBound, int yBound) {
 		CsvReader csvReader = env.readCsvFile(config.getDataLocation())
 				.ignoreFirstLine()
 				.ignoreInvalidLines()

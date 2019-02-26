@@ -20,8 +20,9 @@ public class DataService {
 	@Autowired
 	@Qualifier("data-processor.flink")
 	private DataProcessor flinkDataProcessor;
-	@Autowired
-	private StreamDataProcessor streamDataProcessor;
+	//@Autowired
+	//@Qualifier("data-processor.simpleStream")
+	//private StreamDataProcessor streamDataProcessor;
 	
 	
 	public int[][] scatterPlot(int x, int y) {
@@ -32,10 +33,6 @@ public class DataService {
 	public int[][] scatterPlot() {
 		return sequentialDataProcessor.scatterPlot();
 	}
-	
-	
-	public void scatterPlot(int xDim, int yDim, OutputStream outputStream) {
-		streamDataProcessor.streamedScatterPlot(xDim, yDim, outputStream);
-	}
+
 	
 }

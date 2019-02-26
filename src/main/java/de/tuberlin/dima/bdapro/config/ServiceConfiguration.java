@@ -41,9 +41,14 @@ public class ServiceConfiguration {
 	
 	@Autowired
 	private ServiceProperties properties;
-	
-	
-	@Bean("data-processor.flink")
+
+    @Bean("data-processor.simpleStreaming")
+    public DataProcessor streamingProcessor() {
+    	return dataProcessor(ExecutionType.SIMPLESTREAMING, null);
+    }
+
+
+    @Bean("data-processor.flink")
 	public DataProcessor dataAccessorFlink() {
 		return dataProcessor(ExecutionType.FLINK, properties.getData());
 	}
@@ -64,7 +69,7 @@ public class ServiceConfiguration {
 	/*Definierte entität, die zu späterem Zeitpunkt instantiiert und benutzt werden kann. Bekommen stream processor zurück
 	* Spirng properties werden in dieser Klasse instantiiert, e.g. config für flink und output und input files.
 	* */
-	@Bean
+	@Bean("data-processor.streaming")
 	public StreamDataProcessor streamDataProcessor() {
 		// obtain execution environment and set setBufferTimeout to 1 to enable
 		// continuous flushing of the output buffers (lowest latency)
@@ -96,6 +101,10 @@ public class ServiceConfiguration {
 			case FLINK:
 				// ToDo: set up Flink exec env properly
 				dataProcessor = new FlinkDataProcessor(config, ExecutionEnvironment.getExecutionEnvironment());
+				break;
+			case SIMPLESTREAMING:
+				// ToDo: set up Flink exec env properly
+				dataProcessor = new StreamDataProcessor(StreamExecutionEnvironment.getExecutionEnvironment());
 				break;
 		}
 		

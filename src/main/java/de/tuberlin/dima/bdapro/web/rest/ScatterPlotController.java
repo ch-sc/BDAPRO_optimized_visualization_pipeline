@@ -72,7 +72,7 @@ public class ScatterPlotController {
 			HttpServletResponse response) {
 		
 		try (OutputStream out = response.getOutputStream()) {
-			dataService.scatterPlot(bounds.x, bounds.y, out);
+			dataService.scatterPlot(bounds.x, bounds.y);
 		} catch (IOException e) {
 			throw new RuntimeException(ExceptionUtils.getMessage(e), e);
 		}
