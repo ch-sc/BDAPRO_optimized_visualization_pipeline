@@ -13,6 +13,7 @@ import de.tuberlin.dima.bdapro.data.taxi.StreamDataProcessor;
 import de.tuberlin.dima.bdapro.error.ErrorType;
 import de.tuberlin.dima.bdapro.error.ErrorTypeException;
 import de.tuberlin.dima.bdapro.model.ExecutionType;
+import de.tuberlin.dima.bdapro.model.Point;
 import de.tuberlin.dima.bdapro.service.DataService;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -21,6 +22,7 @@ import lombok.extern.log4j.Log4j;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.flink.runtime.util.IntArrayList;
+import org.apache.flink.streaming.api.datastream.DataStream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -68,14 +70,17 @@ public class ScatterPlotController {
 	
 	
 	@GetMapping(value = "/scatter/stream")
-	public void scatterPlot(@ModelAttribute("bounds") DimensionalityBounds bounds,
+	public DataStream<Point> scatterPlot(@ModelAttribute("bounds") DimensionalityBounds bounds,
 			HttpServletResponse response) {
+
+		DataStream<Point> point;
 		
 		try (OutputStream out = response.getOutputStream()) {
-			dataService.scatterPlot(bounds.x, bounds.y);
+			point = dataService.streamingScatterPlot(bounds.x, bounds.y);
 		} catch (IOException e) {
 			throw new RuntimeException(ExceptionUtils.getMessage(e), e);
 		}
+		return point;
 	}
 	
 	

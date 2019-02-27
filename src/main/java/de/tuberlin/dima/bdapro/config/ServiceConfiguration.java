@@ -7,6 +7,7 @@ import java.util.Random;
 
 import de.tuberlin.dima.bdapro.data.DataProcessor;
 import de.tuberlin.dima.bdapro.data.GenericDataAccessor;
+import de.tuberlin.dima.bdapro.data.StreamProcessor;
 import de.tuberlin.dima.bdapro.data.taxi.StreamDataProcessor;
 import de.tuberlin.dima.bdapro.data.taxi.FlinkDataProcessor;
 import de.tuberlin.dima.bdapro.data.taxi.ParallelDataProcessor;
@@ -42,10 +43,11 @@ public class ServiceConfiguration {
 	@Autowired
 	private ServiceProperties properties;
 
+	/*
     @Bean("data-processor.simpleStreaming")
     public DataProcessor streamingProcessor() {
     	return dataProcessor(ExecutionType.SIMPLESTREAMING, null);
-    }
+    }*/
 
 
     @Bean("data-processor.flink")
@@ -69,8 +71,8 @@ public class ServiceConfiguration {
 	/*Definierte entität, die zu späterem Zeitpunkt instantiiert und benutzt werden kann. Bekommen stream processor zurück
 	* Spirng properties werden in dieser Klasse instantiiert, e.g. config für flink und output und input files.
 	* */
-	@Bean("data-processor.streaming")
-	public StreamDataProcessor streamDataProcessor() {
+	@Bean("data-processor.simpleStream")
+	public StreamProcessor streamDataProcessor() {
 		// obtain execution environment and set setBufferTimeout to 1 to enable
 		// continuous flushing of the output buffers (lowest latency)
 		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment()
@@ -80,7 +82,7 @@ public class ServiceConfiguration {
 		final ParameterTool params = ParameterTool.fromArgs(properties.getFlink().args);
 		env.getConfig().setGlobalJobParameters(params);
 		setupInputStream(env, params);
-		return new StreamDataProcessor(env);
+		return streamProcessor(ExecutionType.SIMPLESTREAMING, null);
 	}
 	
 	
@@ -102,13 +104,24 @@ public class ServiceConfiguration {
 				// ToDo: set up Flink exec env properly
 				dataProcessor = new FlinkDataProcessor(config, ExecutionEnvironment.getExecutionEnvironment());
 				break;
-			case SIMPLESTREAMING:
-				// ToDo: set up Flink exec env properly
-				dataProcessor = new StreamDataProcessor(StreamExecutionEnvironment.getExecutionEnvironment());
-				break;
 		}
 		
 		return dataProcessor;
+	}
+
+	public static StreamProcessor streamProcessor(ExecutionType executionType, DataConfig config){
+		if (executionType == null){
+			executionType = ExecutionType.SIMPLESTREAMING;
+		}
+
+		StreamProcessor streamProcessor;
+		switch (executionType){
+			default:
+			case SIMPLESTREAMING:
+				streamProcessor = new StreamDataProcessor(StreamExecutionEnvironment.getExecutionEnvironment());
+				break;
+		}
+		return streamProcessor;
 	}
 	
 	

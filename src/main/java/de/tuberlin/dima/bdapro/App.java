@@ -7,6 +7,7 @@ import de.tuberlin.dima.bdapro.config.DataConfig;
 import de.tuberlin.dima.bdapro.config.ServiceConfiguration;
 import de.tuberlin.dima.bdapro.config.ServiceProperties;
 import de.tuberlin.dima.bdapro.data.DataProcessor;
+import de.tuberlin.dima.bdapro.data.StreamProcessor;
 import de.tuberlin.dima.bdapro.model.ExecutionType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -45,6 +46,7 @@ public class App {
 		}*/
 		
 		final DataProcessor dataProcessor = ServiceConfiguration.dataProcessor(ExecutionType.SIMPLESTREAMING, null);
+		final StreamProcessor streamProcessor = ServiceConfiguration.streamProcessor(ExecutionType.SIMPLESTREAMING, null);
 		
 		int x = 1000, y = 1000;
 		/*
@@ -66,7 +68,7 @@ public class App {
 
 		System.out.println("I'm here.");
 
-		dataProcessor.scatterPlot(x,y);
+		streamProcessor.scatterPlot(x,y);
 
 	}
 	

@@ -3,7 +3,10 @@ package de.tuberlin.dima.bdapro.service;
 import java.io.OutputStream;
 
 import de.tuberlin.dima.bdapro.data.DataProcessor;
+import de.tuberlin.dima.bdapro.data.StreamProcessor;
 import de.tuberlin.dima.bdapro.data.taxi.StreamDataProcessor;
+import de.tuberlin.dima.bdapro.model.Point;
+import org.apache.flink.streaming.api.datastream.DataStream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -20,9 +23,9 @@ public class DataService {
 	@Autowired
 	@Qualifier("data-processor.flink")
 	private DataProcessor flinkDataProcessor;
-	//@Autowired
-	//@Qualifier("data-processor.simpleStream")
-	//private StreamDataProcessor streamDataProcessor;
+	@Autowired
+	@Qualifier("data-processor.simpleStream")
+	private StreamProcessor streamProcessor;
 	
 	
 	public int[][] scatterPlot(int x, int y) {
@@ -33,6 +36,8 @@ public class DataService {
 	public int[][] scatterPlot() {
 		return sequentialDataProcessor.scatterPlot();
 	}
+
+	public DataStream<Point> streamingScatterPlot(int x, int y) { return streamProcessor.scatterPlot(x,y); }
 
 	
 }

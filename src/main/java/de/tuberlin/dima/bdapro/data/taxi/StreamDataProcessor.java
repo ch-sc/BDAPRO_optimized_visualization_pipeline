@@ -1,29 +1,20 @@
 package de.tuberlin.dima.bdapro.data.taxi;
 
 import java.util.*;
-import java.util.stream.IntStream;
-import java.util.stream.StreamSupport;
 import java.io.OutputStream;
 
-import de.tuberlin.dima.bdapro.config.DataConfig;
-import de.tuberlin.dima.bdapro.data.DataProcessor;
+import de.tuberlin.dima.bdapro.data.StreamProcessor;
 import de.tuberlin.dima.bdapro.error.BusinessException;
+import de.tuberlin.dima.bdapro.model.Point;
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.api.java.io.CsvReader;
-import org.apache.flink.streaming.api.datastream.JoinedStreams;
-import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
-import org.apache.flink.streaming.api.datastream.WindowedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
 import org.apache.flink.streaming.api.functions.windowing.AllWindowFunction;
-import org.apache.flink.streaming.api.functions.windowing.WindowFunction;
-import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
@@ -33,7 +24,7 @@ import org.apache.flink.util.Collector;
  * Applies M4 transformation to data stream
  */
 
-public class StreamDataProcessor extends DataProcessor {
+public class StreamDataProcessor extends StreamProcessor {
 	
 	private final StreamExecutionEnvironment env;
 	
@@ -44,7 +35,7 @@ public class StreamDataProcessor extends DataProcessor {
 
 
 	@Override
-	public int[][] scatterPlot(int x, int y) {
+	public DataStream<Point> scatterPlot(int x, int y) {
 
 		env.setStreamTimeCharacteristic(TimeCharacteristic.IngestionTime);
 
@@ -132,7 +123,17 @@ public class StreamDataProcessor extends DataProcessor {
 						}
 					});
 
-			window.print();
+			DataStream<Point> points = window.map(new MapFunction<Tuple2<Double, Double>, Point>() {
+				@Override
+				public Point map(Tuple2<Double, Double> input) throws Exception {
+
+					double[] data = new double[]{input.f0, input.f1};
+
+					Point point = new Point(data);
+
+					return point;
+				}
+			});
 
 
 		try {
@@ -141,12 +142,7 @@ public class StreamDataProcessor extends DataProcessor {
 			throw new BusinessException(e.getMessage(), e);
 		}
 
-		return null;
-	}
-
-	@Override
-	public int[][] scatterPlot() {
-		return new int[0][];
+		return points;
 	}
 
 
