@@ -8,11 +8,7 @@ import java.util.Random;
 import de.tuberlin.dima.bdapro.data.DataProcessor;
 import de.tuberlin.dima.bdapro.data.GenericDataAccessor;
 import de.tuberlin.dima.bdapro.data.StreamProcessor;
-import de.tuberlin.dima.bdapro.data.taxi.StreamDataProcessor;
-import de.tuberlin.dima.bdapro.data.taxi.FlinkDataProcessor;
-import de.tuberlin.dima.bdapro.data.taxi.ParallelDataProcessor;
-import de.tuberlin.dima.bdapro.data.taxi.SimpleDataProcessor;
-import de.tuberlin.dima.bdapro.data.taxi.TaxiRide;
+import de.tuberlin.dima.bdapro.data.taxi.*;
 import de.tuberlin.dima.bdapro.model.ExecutionType;
 import lombok.extern.java.Log;
 import org.apache.flink.api.common.functions.MapFunction;
@@ -72,7 +68,7 @@ public class ServiceConfiguration {
 	* Spirng properties werden in dieser Klasse instantiiert, e.g. config für flink und output und input files.
 	* */
 	@Bean("data-processor.simpleStream")
-	public StreamProcessor streamDataProcessor() {
+	public StreamProcessor simpleStreamProcessor() {
 		// obtain execution environment and set setBufferTimeout to 1 to enable
 		// continuous flushing of the output buffers (lowest latency)
 		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment()
@@ -83,6 +79,20 @@ public class ServiceConfiguration {
 		env.getConfig().setGlobalJobParameters(params);
 		setupInputStream(env, params);
 		return streamProcessor(ExecutionType.SIMPLESTREAMING, null);
+	}
+
+	@Bean("data-processor.m4Stream")
+	public StreamProcessor streamDataProcessor() {
+		// obtain execution environment and set setBufferTimeout to 1 to enable
+		// continuous flushing of the output buffers (lowest latency)
+		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment()
+				.setBufferTimeout(1);
+		// make parameters available in the web interface
+		// Checking input parameters
+		final ParameterTool params = ParameterTool.fromArgs(properties.getFlink().args);
+		env.getConfig().setGlobalJobParameters(params);
+		setupInputStream(env, params);
+		return streamProcessor(ExecutionType.M4STREAMING, null);
 	}
 	
 	
@@ -118,8 +128,10 @@ public class ServiceConfiguration {
 		switch (executionType){
 			default:
 			case SIMPLESTREAMING:
-				streamProcessor = new StreamDataProcessor(StreamExecutionEnvironment.getExecutionEnvironment());
+				streamProcessor = new SimpleStreamDataProcessor(StreamExecutionEnvironment.getExecutionEnvironment());
 				break;
+			case M4STREAMING:
+				streamProcessor = new StreamDataProcessor(StreamExecutionEnvironment.getExecutionEnvironment());
 		}
 		return streamProcessor;
 	}

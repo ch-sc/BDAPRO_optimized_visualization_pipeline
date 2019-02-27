@@ -24,8 +24,11 @@ public class DataService {
 	@Qualifier("data-processor.flink")
 	private DataProcessor flinkDataProcessor;
 	@Autowired
-	@Qualifier("data-processor.simpleStream")
+	@Qualifier("data-processor.m4Stream")
 	private StreamProcessor streamProcessor;
+	@Autowired
+	@Qualifier("data-processor.simpleStream")
+	private StreamProcessor simpleStreamProcessor;
 	
 	
 	public int[][] scatterPlot(int x, int y) {
