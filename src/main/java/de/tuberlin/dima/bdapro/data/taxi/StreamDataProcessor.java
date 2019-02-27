@@ -135,6 +135,8 @@ public class StreamDataProcessor extends StreamProcessor {
 				}
 			});
 
+			points.print();
+
 
 		try {
 			env.execute("Streaming Iteration Example");
