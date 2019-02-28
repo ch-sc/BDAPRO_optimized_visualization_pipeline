@@ -71,7 +71,7 @@ public class SimpleStreamDataProcessor extends StreamProcessor {
             }
         });
 
-        //apply custom M4 function
+        //apply simple stream transformation
         DataStream<Point> points = pDataStream
                 .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple2<Double, Double>>() {
                     @Override

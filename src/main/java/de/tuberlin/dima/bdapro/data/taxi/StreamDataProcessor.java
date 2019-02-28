@@ -10,6 +10,7 @@ import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -19,138 +20,150 @@ import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindo
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
+import scala.Int;
 
 /**
  * Applies M4 transformation to data stream
  */
 
 public class StreamDataProcessor extends StreamProcessor {
-	
-	private final StreamExecutionEnvironment env;
-	
-	
-	public StreamDataProcessor(StreamExecutionEnvironment env) {
-		this.env = env;
-	}
+
+    private final StreamExecutionEnvironment env;
 
 
-	@Override
-	public DataStream<Point> scatterPlot(int x, int y) {
-
-		env.setStreamTimeCharacteristic(TimeCharacteristic.IngestionTime);
-
-		DataStream<String> dataStream;
-		// execute the program
-
-			//read input file
-		dataStream = env.readTextFile("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/1000000.csv");
-
-			//filter for the first two rows
-			dataStream = dataStream.filter(new FilterFunction<String>() {
-				@Override
-				public boolean filter(String s) throws Exception {
-					if (!s.equalsIgnoreCase(null) && !s.contains("VendorID")){
-						return true;
-					}
-					return false;
-				}
-			});
+    public StreamDataProcessor(StreamExecutionEnvironment env) {
+        this.env = env;
+    }
 
 
-			//get desired data fields from input file
-			DataStream<Tuple2<Double,Double>> pDataStream = dataStream.flatMap(new FlatMapFunction<String, Tuple2<Double, Double>>() {
-				@Override
-				public void flatMap(String s, Collector<Tuple2<Double,Double>> out) throws Exception {
-					if (!s.equalsIgnoreCase(null)){
-						String[] helper = s.split(",");
-						if (helper.length >= 10) {
-							Tuple2<Double, Double> output = new Tuple2<Double, Double>(Double.parseDouble(helper[4]), Double.parseDouble(helper[10]));
-							out.collect(output);
-						}
-					}
-				}
-			});
+    @Override
+    public DataStream<Point> scatterPlot(int x, int y) {
 
-			//apply custom M4 function
-			DataStream<Tuple2<Double,Double>> window = pDataStream
-					.assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple2<Double, Double>>() {
-				@Override
-				public long extractAscendingTimestamp(Tuple2<Double, Double> element) {
-					return System.currentTimeMillis();
-				}
-			})
-					.windowAll(TumblingEventTimeWindows.of(Time.seconds(60)))
-					.apply(new AllWindowFunction<Tuple2<Double, Double>, Tuple2<Double,Double>, TimeWindow>() {
+        env.setStreamTimeCharacteristic(TimeCharacteristic.IngestionTime);
+
+        DataStream<String> dataStream;
+        // execute the program
+
+        //read input file
+        dataStream = env.readTextFile("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/1000000.csv");
+
+        //filter for the first two rows
+        dataStream = dataStream.filter(new FilterFunction<String>() {
+            @Override
+            public boolean filter(String s) throws Exception {
+                if (!s.equalsIgnoreCase(null) && !s.contains("VendorID")) {
+                    return true;
+                }
+                return false;
+            }
+        });
 
 
-						@Override
-						public void apply(TimeWindow timeWindow, Iterable<Tuple2<Double, Double>> iterable, Collector<Tuple2<Double, Double>> collector) throws Exception {
+        //get desired data fields from input file
+        DataStream<Tuple2<Integer, Integer>> pDataStream = dataStream.flatMap(new FlatMapFunction<String, Tuple2<Integer, Integer>>() {
+            @Override
+            public void flatMap(String s, Collector<Tuple2<Integer, Integer>> out) throws Exception {
+                if (!s.equalsIgnoreCase(null)) {
+                    String[] helper = s.split(",");
+                    if (helper.length >= 10) {
+                        Tuple2<Integer, Integer> output = new Tuple2<Integer, Integer>(Integer.valueOf(helper[4]), Integer.valueOf(helper[10]));
+                        out.collect(output);
+                    }
+                }
+            }
+        });
 
-							double xMax = Double.MIN_VALUE;
-							double xMin = Double.MAX_VALUE;
-							double yMax = Double.MIN_VALUE;
-							double yMin = Double.MAX_VALUE;
-							double yVal = 0;
-							double xVal = 0;
-							List<Tuple2<Double,Double>> vals = new ArrayList<>();
-							double finalVal = 0;
-
-							for (Tuple2<Double,Double> v: iterable){
-								if (xMax <= v.f0){
-									xMax = v.f0;
-								}
-								if (xMin >= v.f0){
-									xMin = v.f0;
-								}
-								if (yMax <= v.f1){
-									yMax = v.f1;
-								}
-								if (yMin >= v.f1){
-									yMin = v.f1;
-								}
-							}
-
-							for (Tuple2<Double, Double> v: iterable){
-								yVal = Math.round(y * (v.f1 - yMin)/(yMax-yMin));
-								xVal = Math.round(x * (v.f0 - xMin)/(xMax-xMin));
-								if (vals.isEmpty() || !vals.contains(new Tuple2<>(xVal,yVal))){
-									vals.add(new Tuple2<>(xVal,yVal));
-									collector.collect(new Tuple2<>(xVal,yVal));
-								}
-							}
+        //apply custom VDDA function
+        DataStream<Tuple3<Integer, Integer, Long>> window = pDataStream.assignTimestampsAndWatermarks(
+                new AscendingTimestampExtractor<Tuple2<Integer, Integer>>() {
+                    @Override
+                    public long extractAscendingTimestamp(Tuple2<Integer, Integer> element) {
+                        return System.currentTimeMillis();
+                    }
+                })
+                .windowAll(TumblingEventTimeWindows.of(Time.seconds(60)))
+                .apply(new AllWindowFunction<Tuple2<Integer, Integer>, Tuple3<Integer, Integer, Long>, TimeWindow>() {
 
 
-						}
-					});
+                    @Override
+                    public void apply(TimeWindow timeWindow, Iterable<Tuple2<Integer, Integer>> iterable, Collector<Tuple3<Integer, Integer, Long>> collector) throws Exception {
 
-			DataStream<Point> points = window.map(new MapFunction<Tuple2<Double, Double>, Point>() {
-				@Override
-				public Point map(Tuple2<Double, Double> input) throws Exception {
+                        int xMax = Integer.MIN_VALUE;
+                        int xMin = Integer.MAX_VALUE;
+                        int yMax = Integer.MIN_VALUE;
+                        int yMin = Integer.MAX_VALUE;
+                        int yVal = 0;
+                        int xVal = 0;
+                        Map<Long, Long> valueMap = new HashMap<>();
 
-					double[] data = new double[]{input.f0, input.f1};
+                        for (Tuple2<Integer, Integer> v : iterable) {
+                            if (xMax <= v.f0) {
+                                xMax = v.f0;
+                            }
+                            if (xMin >= v.f0) {
+                                xMin = v.f0;
+                            }
+                            if (yMax <= v.f1) {
+                                yMax = v.f1;
+                            }
+                            if (yMin >= v.f1) {
+                                yMin = v.f1;
+                            }
+                        }
 
-					Point point = new Point(data);
+                        for (Tuple2<Integer, Integer> v : iterable) {
+                            yVal = Math.round(y * (v.f1 - yMin) / (yMax - yMin));
+                            xVal = Math.round(x * (v.f0 - xMin) / (xMax - xMin));
 
-					return point;
-				}
-			});
+                            long key = ((long)xVal) << 32 | yVal;
 
-			points.print();
+                            valueMap.putIfAbsent(key, 1L);
+                            valueMap.computeIfPresent(key, (k, value) -> value++);
+
+                            // if (valueMap.isEmpty() || !valueMap.contains(new Tuple2<>(xVal, yVal))) {
+                            //     valueMap.add(new Tuple2<>(xVal, yVal));
+                            //     collector.collect(new Tuple2<>(xVal, yVal));
+                            // }
+                        }
+
+                        valueMap.entrySet().stream()
+                                .forEach(e -> {
+                                    int xKey = (int)(e.getKey() >>32);
+                                    int yKey = e.getKey().intValue();
+                                    collector.collect(new Tuple3<Integer, Integer, Long>(xKey, yKey, e.getValue()));
+                                });
+
+                    }
+                });
+
+        DataStream<Point> points = window.map(new MapFunction<Tuple3<Integer, Integer, Long>, Point>() {
+            @Override
+            public Point map(Tuple3<Integer, Integer, Long> input) throws Exception {
+
+                double[] data = new double[]{input.f0, input.f1};
+
+                Point point = new Point(data);
+
+                return point;
+            }
+        });
+
+        points.print();
 
 
-		try {
-			env.execute("Streaming Iteration Example");
-		} catch (Exception e) {
-			throw new BusinessException(e.getMessage(), e);
-		}
+        try {
+            env.execute("Streaming Iteration Example");
+        } catch (Exception e) {
+            throw new BusinessException(e.getMessage(), e);
+        }
 
-		return points;
-	}
+        return points;
+    }
 
 
-	public void streamedScatterPlot(OutputStream outputStream) {
-	
-	}
+    public void streamedScatterPlot(OutputStream outputStream) {
+
+    }
 
 
 }
