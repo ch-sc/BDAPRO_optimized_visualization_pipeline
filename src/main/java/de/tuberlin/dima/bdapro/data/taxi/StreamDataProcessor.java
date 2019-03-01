@@ -66,7 +66,7 @@ public class StreamDataProcessor extends StreamProcessor {
                 if (!s.equalsIgnoreCase(null)) {
                     String[] helper = s.split(",");
                     if (helper.length >= 10) {
-                        Tuple2<Integer, Integer> output = new Tuple2<Integer, Integer>(Integer.valueOf(helper[4]), Integer.valueOf(helper[10]));
+                        Tuple2<Integer, Integer> output = new Tuple2<Integer, Integer>(100*Double.valueOf(helper[4]).intValue(), 100*Double.valueOf(helper[10]).intValue());
                         out.collect(output);
                     }
                 }
@@ -81,7 +81,7 @@ public class StreamDataProcessor extends StreamProcessor {
                         return System.currentTimeMillis();
                     }
                 })
-                .windowAll(TumblingEventTimeWindows.of(Time.seconds(60)))
+                .windowAll(TumblingEventTimeWindows.of(Time.seconds(500)))
                 .apply(new AllWindowFunction<Tuple2<Integer, Integer>, Tuple3<Integer, Integer, Long>, TimeWindow>() {
 
 
@@ -118,7 +118,7 @@ public class StreamDataProcessor extends StreamProcessor {
                             long key = ((long)xVal) << 32 | yVal;
 
                             valueMap.putIfAbsent(key, 1L);
-                            valueMap.computeIfPresent(key, (k, value) -> value++);
+                            valueMap.computeIfPresent(key, (k, value) -> value+1);
 
                             // if (valueMap.isEmpty() || !valueMap.contains(new Tuple2<>(xVal, yVal))) {
                             //     valueMap.add(new Tuple2<>(xVal, yVal));
@@ -136,6 +136,8 @@ public class StreamDataProcessor extends StreamProcessor {
                     }
                 });
 
+        window.print();
+
         DataStream<Point> points = window.map(new MapFunction<Tuple3<Integer, Integer, Long>, Point>() {
             @Override
             public Point map(Tuple3<Integer, Integer, Long> input) throws Exception {
@@ -148,7 +150,7 @@ public class StreamDataProcessor extends StreamProcessor {
             }
         });
 
-        points.print();
+
 
 
         try {
