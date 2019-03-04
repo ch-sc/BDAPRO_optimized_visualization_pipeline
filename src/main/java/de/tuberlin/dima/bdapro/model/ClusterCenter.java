@@ -29,5 +29,3 @@ public class ClusterCenter extends Point{
 
     }
 
-
-}

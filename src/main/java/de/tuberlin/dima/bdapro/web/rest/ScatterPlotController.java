@@ -13,6 +13,7 @@ import javax.websocket.server.PathParam;
 import de.tuberlin.dima.bdapro.data.taxi.StreamDataProcessor;
 import de.tuberlin.dima.bdapro.error.ErrorType;
 import de.tuberlin.dima.bdapro.error.ErrorTypeException;
+import de.tuberlin.dima.bdapro.model.ClusterCenter;
 import de.tuberlin.dima.bdapro.model.ExecutionType;
 import de.tuberlin.dima.bdapro.model.Point;
 import de.tuberlin.dima.bdapro.service.DataService;
@@ -23,6 +24,7 @@ import lombok.extern.log4j.Log4j;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.flink.api.common.serialization.SerializationSchema;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.runtime.util.IntArrayList;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,7 +73,7 @@ public class ScatterPlotController {
 	}
 	
 	
-	@GetMapping(value = "/scatter/stream", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+	@GetMapping(value = "/scatter/stream")
 	public Object[] scatterPlot(@ModelAttribute("bounds") DimensionalityBounds bounds,
 			HttpServletResponse response) {
 
@@ -96,6 +98,34 @@ public class ScatterPlotController {
 		return list.toArray();
 
 	}
+
+	//NOT WORKING YET!
+    @GetMapping(value = "/scatter/clusterstream")
+    public Object[] scatterPlot(@ModelAttribute("bounds") DimensionalityBounds bounds, int k, int maxIter,
+                                HttpServletResponse response) {
+
+        DataStream<Point> points;
+        DataStream<Tuple2<Point, ClusterCenter>> clusteredPoints;
+
+        try (OutputStream out = response.getOutputStream()) {
+            points = dataService.streamingScatterPlot(bounds.x, bounds.y);
+            points.writeToSocket("visualisation-pipeline-service", 8082, new SerializationSchema<Point>() {
+                @Override
+                public byte[] serialize(Point point) {
+                    return ByteBuffer.allocate(4).putDouble(point.getFields()[0]).array();
+                }
+            });
+        } catch (IOException e) {
+            throw new RuntimeException(ExceptionUtils.getMessage(e), e);
+        }
+
+        List<Double> list = new ArrayList<Double>();
+        list.add(5.9);
+        list.add(6.0);
+
+        return list.toArray();
+
+    }
 	
 	
 	private Object[] convert(int[][] grid) {

@@ -5,7 +5,10 @@ import java.io.OutputStream;
 import de.tuberlin.dima.bdapro.data.DataProcessor;
 import de.tuberlin.dima.bdapro.data.StreamProcessor;
 import de.tuberlin.dima.bdapro.data.taxi.StreamDataProcessor;
+import de.tuberlin.dima.bdapro.model.ClusterCenter;
 import de.tuberlin.dima.bdapro.model.Point;
+import org.apache.catalina.Cluster;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -29,6 +32,12 @@ public class DataService {
 	@Autowired
 	@Qualifier("data-processor.simpleStream")
 	private StreamProcessor simpleStreamProcessor;
+	@Autowired
+	@Qualifier("data-processor.kMeansVDDA")
+	private StreamProcessor kMeansVDDA;
+	@Autowired
+	@Qualifier("data-processor.kMeans")
+	private StreamProcessor kMeans;
 	
 	
 	public int[][] scatterPlot(int x, int y) {
@@ -41,6 +50,8 @@ public class DataService {
 	}
 
 	public DataStream<Point> streamingScatterPlot(int x, int y) { return streamProcessor.scatterPlot(x,y); }
+
+	public DataStream<Tuple2<Point, ClusterCenter>> cluster(int x, int y, int k, int maxIter) { return streamProcessor.cluster(x,y, k, maxIter); }
 
 	
 }

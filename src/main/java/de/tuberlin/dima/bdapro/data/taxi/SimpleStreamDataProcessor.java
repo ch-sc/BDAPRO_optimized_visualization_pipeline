@@ -5,6 +5,7 @@ import java.io.OutputStream;
 
 import de.tuberlin.dima.bdapro.data.StreamProcessor;
 import de.tuberlin.dima.bdapro.error.BusinessException;
+import de.tuberlin.dima.bdapro.model.ClusterCenter;
 import de.tuberlin.dima.bdapro.model.Point;
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.FlatMapFunction;
@@ -16,6 +17,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
 import org.apache.flink.streaming.api.functions.windowing.AllWindowFunction;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
@@ -37,7 +39,7 @@ public class SimpleStreamDataProcessor extends StreamProcessor {
     @Override
     public DataStream<Point> scatterPlot(int x, int y) {
 
-        env.setStreamTimeCharacteristic(TimeCharacteristic.IngestionTime);
+        env.setStreamTimeCharacteristic(TimeCharacteristic.ProcessingTime);
 
         DataStream<String> dataStream;
         // execute the program
@@ -79,7 +81,7 @@ public class SimpleStreamDataProcessor extends StreamProcessor {
                         return System.currentTimeMillis();
                     }
                 })
-                .windowAll(TumblingEventTimeWindows.of(Time.seconds(60)))
+                .windowAll(TumblingProcessingTimeWindows.of(Time.seconds(1)))
                 .apply(new AllWindowFunction<Tuple2<Double, Double>, Tuple2<Double,Double>, TimeWindow>() {
 
 
@@ -114,10 +116,11 @@ public class SimpleStreamDataProcessor extends StreamProcessor {
         return points;
     }
 
-
-    public void streamedScatterPlot(OutputStream outputStream) {
-
+    @Override
+    public DataStream<Tuple2<Point, ClusterCenter>> cluster(int xBound, int yBound,int k, int maxIter) {
+        return null;
     }
+
 
 
 }

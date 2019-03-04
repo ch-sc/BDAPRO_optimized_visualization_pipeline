@@ -5,6 +5,7 @@ import java.io.OutputStream;
 
 import de.tuberlin.dima.bdapro.data.StreamProcessor;
 import de.tuberlin.dima.bdapro.error.BusinessException;
+import de.tuberlin.dima.bdapro.model.ClusterCenter;
 import de.tuberlin.dima.bdapro.model.Point;
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.FlatMapFunction;
@@ -17,6 +18,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
 import org.apache.flink.streaming.api.functions.windowing.AllWindowFunction;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
@@ -39,13 +41,13 @@ public class StreamDataProcessor extends StreamProcessor {
     @Override
     public DataStream<Point> scatterPlot(int x, int y) {
 
-        env.setStreamTimeCharacteristic(TimeCharacteristic.IngestionTime);
+        env.setStreamTimeCharacteristic(TimeCharacteristic.ProcessingTime);
 
         DataStream<String> dataStream;
         // execute the program
 
         //read input file
-        dataStream = env.readTextFile("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/1000000.csv");
+        dataStream = env.readTextFile("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/9000000.csv");
 
         //filter for the first two rows
         dataStream = dataStream.filter(new FilterFunction<String>() {
@@ -81,7 +83,7 @@ public class StreamDataProcessor extends StreamProcessor {
                         return System.currentTimeMillis();
                     }
                 })
-                .windowAll(TumblingEventTimeWindows.of(Time.seconds(500)))
+                .windowAll(TumblingProcessingTimeWindows.of(Time.seconds(5)))
                 .apply(new AllWindowFunction<Tuple2<Integer, Integer>, Tuple3<Integer, Integer, Long>, TimeWindow>() {
 
 
@@ -136,8 +138,6 @@ public class StreamDataProcessor extends StreamProcessor {
                     }
                 });
 
-        window.print();
-
         DataStream<Point> points = window.map(new MapFunction<Tuple3<Integer, Integer, Long>, Point>() {
             @Override
             public Point map(Tuple3<Integer, Integer, Long> input) throws Exception {
@@ -150,9 +150,6 @@ public class StreamDataProcessor extends StreamProcessor {
             }
         });
 
-
-
-
         try {
             env.execute("Streaming Iteration Example");
         } catch (Exception e) {
@@ -162,10 +159,11 @@ public class StreamDataProcessor extends StreamProcessor {
         return points;
     }
 
-
-    public void streamedScatterPlot(OutputStream outputStream) {
-
+    @Override
+    public DataStream<Tuple2<Point, ClusterCenter>> cluster(int xBound, int yBound, int k, int maxIter) {
+        return null;
     }
+
 
 
 }

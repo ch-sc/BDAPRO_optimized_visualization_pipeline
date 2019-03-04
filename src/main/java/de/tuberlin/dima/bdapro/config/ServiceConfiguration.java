@@ -13,9 +13,7 @@ import de.tuberlin.dima.bdapro.model.ExecutionType;
 import lombok.extern.java.Log;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.ExecutionEnvironment;
-import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.api.java.tuple.Tuple5;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.streaming.api.collector.selector.OutputSelector;
@@ -94,6 +92,34 @@ public class ServiceConfiguration {
 		setupInputStream(env, params);
 		return streamProcessor(ExecutionType.M4STREAMING, null);
 	}
+
+	@Bean("data-processor.kMeansVDDA")
+	public StreamProcessor kMeansVDDA() {
+		// obtain execution environment and set setBufferTimeout to 1 to enable
+		// continuous flushing of the output buffers (lowest latency)
+		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment()
+				.setBufferTimeout(1);
+		// make parameters available in the web interface
+		// Checking input parameters
+		final ParameterTool params = ParameterTool.fromArgs(properties.getFlink().args);
+		env.getConfig().setGlobalJobParameters(params);
+		setupInputStream(env, params);
+		return streamProcessor(ExecutionType.KMEANSVDDA, null);
+	}
+
+	@Bean("data-processor.kMeans")
+	public StreamProcessor kMeans() {
+		// obtain execution environment and set setBufferTimeout to 1 to enable
+		// continuous flushing of the output buffers (lowest latency)
+		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment()
+				.setBufferTimeout(1);
+		// make parameters available in the web interface
+		// Checking input parameters
+		final ParameterTool params = ParameterTool.fromArgs(properties.getFlink().args);
+		env.getConfig().setGlobalJobParameters(params);
+		setupInputStream(env, params);
+		return streamProcessor(ExecutionType.KMEANS, null);
+	}
 	
 	
 	public static DataProcessor dataProcessor(ExecutionType executionType, DataConfig config) {
@@ -132,6 +158,13 @@ public class ServiceConfiguration {
 				break;
 			case M4STREAMING:
 				streamProcessor = new StreamDataProcessor(StreamExecutionEnvironment.getExecutionEnvironment());
+				break;
+			case KMEANSVDDA:
+				streamProcessor = new KMeansVDDA(StreamExecutionEnvironment.getExecutionEnvironment());
+				break;
+			case KMEANS:
+				streamProcessor = new KMeansSimple(StreamExecutionEnvironment.getExecutionEnvironment());
+				break;
 		}
 		return streamProcessor;
 	}
