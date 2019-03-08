@@ -1,18 +1,17 @@
 package de.tuberlin.dima.bdapro.service;
 
-import java.io.OutputStream;
-
 import de.tuberlin.dima.bdapro.data.DataProcessor;
 import de.tuberlin.dima.bdapro.data.StreamProcessor;
-import de.tuberlin.dima.bdapro.data.taxi.StreamDataProcessor;
 import de.tuberlin.dima.bdapro.model.ClusterCenter;
 import de.tuberlin.dima.bdapro.model.Point;
-import org.apache.catalina.Cluster;
-import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.java.tuple.Tuple3;
+import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 
 @Service
 public class DataService {
@@ -49,9 +48,9 @@ public class DataService {
 		return sequentialDataProcessor.scatterPlot();
 	}
 
-	public DataStream<Point> streamingScatterPlot(int x, int y) { return streamProcessor.scatterPlot(x,y); }
+	public DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> streamingScatterPlot(int x, int y) { return streamProcessor.scatterPlot(x,y); }
 
-	public DataStream<Tuple2<Point, ClusterCenter>> cluster(int x, int y, int k, int maxIter) { return streamProcessor.cluster(x,y, k, maxIter); }
+	public DataStream<Tuple3<LocalDateTime, Point, ClusterCenter>> cluster(int x, int y, int k, int maxIter) { return streamProcessor.cluster(x,y, k, maxIter); }
 
 	
 }

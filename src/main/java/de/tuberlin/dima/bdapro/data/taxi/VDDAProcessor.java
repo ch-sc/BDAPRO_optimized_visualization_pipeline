@@ -1,6 +1,7 @@
 package de.tuberlin.dima.bdapro.data.taxi;
 
 import java.time.LocalDateTime;
+import java.util.*;
 
 import de.tuberlin.dima.bdapro.data.StreamProcessor;
 import de.tuberlin.dima.bdapro.error.BusinessException;
@@ -31,15 +32,7 @@ import org.apache.flink.util.Collector;
  * Applies M4 transformation to data stream
  */
 @Slf4j
-public class StreamDataProcessor extends StreamProcessor {
-
-    private final StreamExecutionEnvironment env;
-
-
-    public StreamDataProcessor(StreamExecutionEnvironment env) {
-        this.env = env;
-    }
-
+public class VDDAProcessor extends StreamProcessor {
 
     @Override
     public DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> scatterPlot(int x, int y) {
@@ -84,48 +77,96 @@ public class StreamDataProcessor extends StreamProcessor {
             }
         });
 
-        //apply simple stream transformation
-        DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> points = pDataStream
-                .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple3<LocalDateTime, Double, Double>>() {
+        DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> resultStream = pDataStream
+                .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple3<LocalDateTime,Double,Double>>() {
                     @Override
                     public long extractAscendingTimestamp(Tuple3<LocalDateTime,Double, Double> event) {
                         return Long.valueOf(event.f0.getSecond()+event.f0.getMinute()+event.f0.getHour()+event.f0.getDayOfYear()+event.f0.getYear());
                     }
                 }).keyBy(0).window(SlidingEventTimeWindows.of(Time.seconds(100),Time.seconds(20)))
-                .apply(new WindowFunction<Tuple3<LocalDateTime, Double, Double>, Tuple4<LocalDateTime, Double, Point, Integer>, Tuple, TimeWindow>()  {
-
-
+                .apply(new WindowFunction<Tuple3<LocalDateTime, Double, Double>, Tuple4<LocalDateTime, Double, Point, Integer>, Tuple, TimeWindow>() {
                     @Override
                     public void apply(Tuple tuple, TimeWindow timeWindow, Iterable<Tuple3<LocalDateTime, Double, Double>> iterable, Collector<Tuple4<LocalDateTime, Double, Point, Integer>> collector) throws Exception {
 
-                        for (Tuple3<LocalDateTime, Double, Double> v: iterable){
 
+                        double xMax = Double.MIN_VALUE;
+                        double xMin = Double.MAX_VALUE;
+                        double yMax = Double.MIN_VALUE;
+                        double yMin = Double.MAX_VALUE;
+                        double yVal = 0;
+                        double xVal = 0;
+                        Map<Double, Tuple3<LocalDateTime,Point, Integer>> valueMap = new HashMap<>();
+
+                        for (Tuple3<LocalDateTime, Double, Double> v : iterable) {
+                            if (xMax <= v.f1) {
+                                xMax = v.f1;
+                            }
+                            if (xMin >= v.f1) {
+                                xMin = v.f1;
+                            }
+                            if (yMax <= v.f2) {
+                                yMax = v.f2;
+                            }
+                            if (yMin >= v.f2) {
+                                yMin = v.f2;
+                            }
+                        }
+
+                        double ydiv = yMax - yMin;
+                        double xdiv = xMax - xMin;
+
+                        for (Tuple3<LocalDateTime, Double, Double> v : iterable) {
+                            if (ydiv != 0){
+                                yVal = Math.round(y * (v.f2 - yMin) / ydiv);
+                            }else {
+                                yVal = Math.round(y * (v.f2 - yMin) / 1);
+                            }
+                            if (xdiv != 0){
+                                xVal = Math.round(x * (v.f1 - xMin) / xdiv);
+                            }else {
+                                xVal = Math.round(x * (v.f1 - xMin) / 1);
+
+                            }
+
+                            double key = x* yVal + xVal;
                             double[] data = new double[]{v.f1, v.f2};
 
                             Point point = new Point(data);
 
-                            collector.collect(new Tuple4<LocalDateTime, Double, Point, Integer>(v.f0,0.0,point,1));
+                            //count number of occurences
+                            valueMap.computeIfPresent(key, (k, value) -> new Tuple3<LocalDateTime,Point,Integer>(value.f0, value.f1, value.f2+1));
+                            //only save the first incoming point per window
+                            valueMap.putIfAbsent(key, new Tuple3<LocalDateTime,Point,Integer>(v.f0, point, 1));
                         }
+
+                        valueMap.entrySet().stream()
+                                .forEach(e -> {
+                                    collector.collect(new Tuple4<LocalDateTime, Double, Point, Integer>(e.getValue().f0, e.getKey(), e.getValue().f1, e.getValue().f2));
+                                });
 
                     }
                 });
 
-
-        try {
-            env.execute("Streaming Iteration Example");
-        } catch (Exception e) {
-            throw new BusinessException(e.getMessage(), e);
-        }
-
         timer.stop();
-        log.info("Time for Streamprocessing " + timer.getTime() + "ms");
+        log.info("Time for VDDA " + timer.getTime() + "ms");
 
-        return points;
+        return resultStream;
+
     }
 
     @Override
     public DataStream<Tuple3<LocalDateTime, Point, ClusterCenter>> cluster(int xBound, int yBound, int k, int maxIter) {
         return null;
     }
+
+    private final StreamExecutionEnvironment env;
+
+
+    public VDDAProcessor(StreamExecutionEnvironment env) {
+        this.env = env;
+    }
+
+
+
 
 }

@@ -1,5 +1,6 @@
 package de.tuberlin.dima.bdapro;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 
 import de.tuberlin.dima.bdapro.config.AppConfigLoader;
@@ -17,6 +18,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
@@ -85,7 +87,7 @@ public class App {
 		StopWatch timer = new StopWatch();
 		timer.start();
 
-		DataStream<Tuple2<Point, ClusterCenter>> clusters = cluster.cluster(x,y,5,5);
+		DataStream<Tuple3<LocalDateTime, Point, ClusterCenter>> clusters = cluster.cluster(x,y,5,5);
 
 		timer.stop();
 		log.info("Time for total " + timer.getTime() + "ms");

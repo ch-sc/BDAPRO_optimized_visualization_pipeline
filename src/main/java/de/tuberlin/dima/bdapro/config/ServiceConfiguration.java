@@ -154,10 +154,10 @@ public class ServiceConfiguration {
 		switch (executionType){
 			default:
 			case SIMPLESTREAMING:
-				streamProcessor = new SimpleStreamDataProcessor(StreamExecutionEnvironment.getExecutionEnvironment());
+				streamProcessor = new StreamDataProcessor(StreamExecutionEnvironment.getExecutionEnvironment());
 				break;
 			case M4STREAMING:
-				streamProcessor = new StreamDataProcessor(StreamExecutionEnvironment.getExecutionEnvironment());
+				streamProcessor = new VDDAProcessor(StreamExecutionEnvironment.getExecutionEnvironment());
 				break;
 			case KMEANSVDDA:
 				streamProcessor = new KMeansVDDA(StreamExecutionEnvironment.getExecutionEnvironment());

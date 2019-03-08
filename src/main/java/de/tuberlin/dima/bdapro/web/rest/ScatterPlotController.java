@@ -4,28 +4,22 @@ package de.tuberlin.dima.bdapro.web.rest;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
-import javax.websocket.server.PathParam;
 
-import de.tuberlin.dima.bdapro.data.taxi.StreamDataProcessor;
+import de.tuberlin.dima.bdapro.data.taxi.VDDAProcessor;
 import de.tuberlin.dima.bdapro.error.ErrorType;
 import de.tuberlin.dima.bdapro.error.ErrorTypeException;
 import de.tuberlin.dima.bdapro.model.ClusterCenter;
-import de.tuberlin.dima.bdapro.model.ExecutionType;
 import de.tuberlin.dima.bdapro.model.Point;
 import de.tuberlin.dima.bdapro.service.DataService;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.extern.java.Log;
-import lombok.extern.log4j.Log4j;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.runtime.util.IntArrayList;
+import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -41,11 +35,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class ScatterPlotController {
 	
 	private final DataService dataService;
-	private final StreamDataProcessor streamDataProcessor;
+	private final VDDAProcessor streamDataProcessor;
 	
 	
 	@Autowired
-	public ScatterPlotController(DataService dataService, StreamDataProcessor streamDataProcessor) {
+	public ScatterPlotController(DataService dataService, VDDAProcessor streamDataProcessor) {
 		this.dataService = dataService;
 		this.streamDataProcessor = streamDataProcessor;
 	}
@@ -77,20 +71,20 @@ public class ScatterPlotController {
 	public Object[] scatterPlot(@ModelAttribute("bounds") DimensionalityBounds bounds,
 			HttpServletResponse response) {
 
-		DataStream<Point> points;
-		
+		DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> points;
+		/*
 		try (OutputStream out = response.getOutputStream()) {
 			points = dataService.streamingScatterPlot(bounds.x, bounds.y);
 			points.writeToSocket("visualisation-pipeline-service", 8082, new SerializationSchema<Point>() {
 				@Override
-				public byte[] serialize(Point point) {
+				public byte[] serialize(DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> points) {
 					return ByteBuffer.allocate(4).putDouble(point.getFields()[0]).array();
 				}
 			});
 		} catch (IOException e) {
 			throw new RuntimeException(ExceptionUtils.getMessage(e), e);
 		}
-
+*/
 		List<Double> list = new ArrayList<Double>();
 		list.add(5.9);
 		list.add(6.0);
@@ -104,9 +98,9 @@ public class ScatterPlotController {
     public Object[] scatterPlot(@ModelAttribute("bounds") DimensionalityBounds bounds, int k, int maxIter,
                                 HttpServletResponse response) {
 
-        DataStream<Point> points;
+        DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> points;
         DataStream<Tuple2<Point, ClusterCenter>> clusteredPoints;
-
+/*
         try (OutputStream out = response.getOutputStream()) {
             points = dataService.streamingScatterPlot(bounds.x, bounds.y);
             points.writeToSocket("visualisation-pipeline-service", 8082, new SerializationSchema<Point>() {
@@ -118,7 +112,7 @@ public class ScatterPlotController {
         } catch (IOException e) {
             throw new RuntimeException(ExceptionUtils.getMessage(e), e);
         }
-
+*/
         List<Double> list = new ArrayList<Double>();
         list.add(5.9);
         list.add(6.0);

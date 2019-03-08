@@ -4,32 +4,25 @@ import de.tuberlin.dima.bdapro.data.StreamProcessor;
 import de.tuberlin.dima.bdapro.error.BusinessException;
 import de.tuberlin.dima.bdapro.model.ClusterCenter;
 import de.tuberlin.dima.bdapro.model.Point;
+import org.apache.commons.lang3.SystemUtils;
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.java.DataSet;
-import org.apache.flink.api.java.operators.IterativeDataSet;
-import org.apache.flink.api.java.tuple.Tuple;
-import org.apache.flink.api.java.tuple.Tuple1;
-import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.api.java.tuple.Tuple3;
+import org.apache.flink.api.java.tuple.*;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.datastream.DataStreamUtils;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
-import org.apache.flink.streaming.api.functions.windowing.AllWindowFunction;
+import org.apache.flink.streaming.api.functions.windowing.WindowFunction;
 import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
-import org.apache.flink.streaming.api.windowing.assigners.SlidingProcessingTimeWindows;
-import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
-import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
 import org.apache.commons.lang3.time.StopWatch;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -46,57 +39,57 @@ public class KMeansVDDA extends StreamProcessor{
     }
 
     @Override
-    public DataStream<Tuple2<Point, ClusterCenter>> cluster(int xBound, int yBound, int k, int maxIter) {
+    public DataStream<Tuple3<LocalDateTime,Point, ClusterCenter>> cluster(int xBound, int yBound, int k, int maxIter) {
 
         StopWatch timer = new StopWatch();
         timer.start();
 
         env.setStreamTimeCharacteristic(TimeCharacteristic.ProcessingTime);
 
-        DataStream<Point> dataPoints = scatterPlot(xBound, yBound);
+        DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> dataPoints = scatterPlot(xBound, yBound);
 
         //initialize the first points as cluster centers
-        DataStream<Tuple2<Point, ClusterCenter>> clusters = dataPoints
-                .windowAll(SlidingProcessingTimeWindows.of(Time.milliseconds(40), Time.milliseconds(10)))
-                .apply(new AllWindowFunction<Point, Tuple2<Point, ClusterCenter>, TimeWindow>() {
+        DataStream<Tuple3<LocalDateTime, Point, ClusterCenter>> clusters = dataPoints
+                .keyBy(0).window(SlidingEventTimeWindows.of(Time.hours(5),Time.hours(2)))
+                .apply(new WindowFunction<Tuple4<LocalDateTime, Double, Point, Integer>, Tuple3<LocalDateTime, Point, ClusterCenter>, Tuple, TimeWindow>() {
 
 
                     @Override
-                    public void apply(TimeWindow timeWindow, Iterable<Point> iterable, Collector<Tuple2<Point, ClusterCenter>> collector) throws Exception {
+                    public void apply(Tuple tuple, TimeWindow timeWindow, Iterable<Tuple4<LocalDateTime, Double, Point, Integer>> iterable, Collector<Tuple3<LocalDateTime, Point, ClusterCenter>> collector) throws Exception {
 
                         int counter = 0;
                         List<ClusterCenter> clusterCenters = new ArrayList<>();
 
                         //take the first k points as initial cluster centers
-                        for (Point p : iterable) {
+                        for (Tuple4<LocalDateTime, Double, Point, Integer> p : iterable) {
                             if (counter < k) {
 
-                                clusterCenters.add(new ClusterCenter(counter, p));
+                                clusterCenters.add(new ClusterCenter(counter, p.f2));
                                 counter++;
 
                             }
                         }
 
                         counter = 0;
-                        Tuple2<Point, ClusterCenter> helper = new Tuple2<>();
-                        List<Tuple2<Point, ClusterCenter>> finalList = new ArrayList<>();
+                        Tuple3<LocalDateTime,Point, ClusterCenter> helper = new Tuple3<>();
+                        List<Tuple3<LocalDateTime,Point, ClusterCenter>> finalList = new ArrayList<>();
 
 
                         //run kmeans as long as max iter not reached or convergence
                         while (counter < maxIter) {
 
-                            List<Tuple2<Point, ClusterCenter>> pointsAndClusters = new ArrayList<>();
+                            List<Tuple3<LocalDateTime,Point, ClusterCenter>> pointsAndClusters = new ArrayList<>();
 
                             //classifiy points with minimal distance
-                            for (Point p : iterable) {
+                            for (Tuple4<LocalDateTime, Double, Point, Integer> p : iterable) {
                                 double dist = Integer.MAX_VALUE;
 
                                 for (ClusterCenter c : clusterCenters) {
 
-                                    if (dist > p.euclideanDistance(c)) {
+                                    if (dist > p.f2.euclideanDistance(c)) {
 
-                                        helper = new Tuple2<>(p, c);
-                                        dist = p.euclideanDistance(c);
+                                        helper = new Tuple3<LocalDateTime,Point, ClusterCenter>(p.f0, p.f2, c);
+                                        dist = p.f2.euclideanDistance(c);
 
                                     }
 
@@ -113,13 +106,13 @@ public class KMeansVDDA extends StreamProcessor{
                                 double[] calcNewCentroid = new double[c.getFields().length];
                                 int total = 0;
 
-                                for (Tuple2<Point, ClusterCenter> tuple : pointsAndClusters) {
+                                for (Tuple3<LocalDateTime,Point, ClusterCenter> t : pointsAndClusters) {
 
-                                    if (tuple.f1 == c) {
+                                    if (t.f1 == c) {
 
                                         for (int i = 0; i < c.getFields().length; i++) {
 
-                                            calcNewCentroid[i] += tuple.f1.getFields()[i];
+                                            calcNewCentroid[i] += t.f1.getFields()[i];
                                         }
                                         total++;
                                     }
@@ -151,7 +144,7 @@ public class KMeansVDDA extends StreamProcessor{
                         }
 
                         //collect list of points with associated cluster centers
-                        for (Tuple2<Point, ClusterCenter> pc : finalList) {
+                        for (Tuple3<LocalDateTime,Point, ClusterCenter> pc : finalList) {
                             collector.collect(pc);
                         }
                     }
@@ -163,16 +156,15 @@ public class KMeansVDDA extends StreamProcessor{
         //System.out.println(env.getExecutionPlan());
 
 
-        DataStream<Tuple1<Integer>> count = clusters.map(new MapFunction<Tuple2<Point, ClusterCenter>, Tuple1<Integer>>() {
+        DataStream<Tuple1<Integer>> count = clusters.map(new MapFunction<Tuple3<LocalDateTime, Point, ClusterCenter>, Tuple1<Integer>>() {
             @Override
-            public Tuple1<Integer> map(Tuple2<Point, ClusterCenter> pointClusterCenterTuple2) throws Exception {
-                return new Tuple1<Integer>(1);
+            public Tuple1<Integer> map(Tuple3<LocalDateTime, Point, ClusterCenter> tuple) throws Exception {
+                return new Tuple1<>(1);
             }
-        }).windowAll(SlidingProcessingTimeWindows.of(Time.milliseconds(40), Time.milliseconds(10))).sum(0);
+        }).windowAll(SlidingEventTimeWindows.of(Time.hours(5),Time.hours(2))).sum(0);
 
 
-
-        count.writeAsCsv("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/VDDA/yellow_tripdata_2017-12/5/");
+        count.writeAsCsv("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/VDDA/100000/2/");
 
         try {
             env.execute("Streaming Iteration Example");
@@ -189,17 +181,17 @@ public class KMeansVDDA extends StreamProcessor{
     }
 
     @Override
-    public DataStream<Point> scatterPlot(int x, int y) {
+    public DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> scatterPlot(int x, int y) {
 
         StopWatch timer = new StopWatch();
         timer.start();
-        env.setStreamTimeCharacteristic(TimeCharacteristic.ProcessingTime);
+        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
         DataStream<String> dataStream;
         // execute the program
 
         //read input file
-        dataStream = env.readTextFile("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/yellow_tripdata_2017-12.csv");
+        dataStream = env.readTextFile("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/100000.csv");
 
         //filter for the first two rows
         dataStream = dataStream.filter(new FilterFunction<String>() {
@@ -214,110 +206,97 @@ public class KMeansVDDA extends StreamProcessor{
 
 
         //get desired data fields from input file
-        DataStream<Tuple2<Integer, Integer>> pDataStream = dataStream.flatMap(new FlatMapFunction<String, Tuple2<Integer, Integer>>() {
+        DataStream<Tuple3<LocalDateTime, Double, Double>> pDataStream = dataStream.flatMap(new FlatMapFunction<String, Tuple3<LocalDateTime, Double, Double>>() {
             @Override
-            public void flatMap(String s, Collector<Tuple2<Integer, Integer>> out) throws Exception {
+            public void flatMap(String s, Collector<Tuple3<LocalDateTime, Double, Double>> out) throws Exception {
                 if (!s.equalsIgnoreCase(null)) {
-                    String[] helper = s.split(",");
+                    String[] helper = s.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
                     if (helper.length >= 10) {
-                        Tuple2<Integer, Integer> output = new Tuple2<Integer, Integer>(100*Double.valueOf(helper[4]).intValue(), 100*Double.valueOf(helper[10]).intValue());
+                        String helper2 = helper[1];
+                        String[] helper3 = helper2.split(" ");
+                        helper2 = helper3[0] + "T" + helper3[1];
+                        LocalDateTime dateTime = LocalDateTime.parse(helper2);
+                        Tuple3<LocalDateTime, Double, Double> output = new Tuple3<>(dateTime, Double.valueOf(helper[7]), Double.valueOf(helper[8]));
                         out.collect(output);
                     }
                 }
             }
         });
 
-        //apply custom VDDA function
-        DataStream<Tuple3<Integer, Integer, Long>> window = pDataStream.assignTimestampsAndWatermarks(
-                new AscendingTimestampExtractor<Tuple2<Integer, Integer>>() {
+        DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> resultStream = pDataStream
+                .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple3<LocalDateTime,Double,Double>>() {
+            @Override
+            public long extractAscendingTimestamp(Tuple3<LocalDateTime,Double, Double> event) {
+                return Long.valueOf(event.f0.getSecond()+event.f0.getMinute()+event.f0.getHour()+event.f0.getDayOfYear()+event.f0.getYear());
+            }
+        }).keyBy(0).window(SlidingEventTimeWindows.of(Time.hours(5),Time.hours(2)))
+                .apply(new WindowFunction<Tuple3<LocalDateTime, Double, Double>, Tuple4<LocalDateTime, Double, Point, Integer>, Tuple, TimeWindow>() {
                     @Override
-                    public long extractAscendingTimestamp(Tuple2<Integer, Integer> element) {
-                        return System.currentTimeMillis();
-                    }
-                })
-                .windowAll(SlidingProcessingTimeWindows.of(Time.milliseconds(40), Time.milliseconds(10)))
-                .apply(new AllWindowFunction<Tuple2<Integer, Integer>, Tuple3<Integer, Integer, Long>, TimeWindow>() {
+                    public void apply(Tuple tuple, TimeWindow timeWindow, Iterable<Tuple3<LocalDateTime, Double, Double>> iterable, Collector<Tuple4<LocalDateTime, Double, Point, Integer>> collector) throws Exception {
 
 
-                    @Override
-                    public void apply(TimeWindow timeWindow, Iterable<Tuple2<Integer, Integer>> iterable, Collector<Tuple3<Integer, Integer, Long>> collector) throws Exception {
+                        double xMax = Double.MIN_VALUE;
+                        double xMin = Double.MAX_VALUE;
+                        double yMax = Double.MIN_VALUE;
+                        double yMin = Double.MAX_VALUE;
+                        double yVal = 0;
+                        double xVal = 0;
+                        Map<Double, Tuple3<LocalDateTime,Point, Integer>> valueMap = new HashMap<>();
 
-                        int xMax = Integer.MIN_VALUE;
-                        int xMin = Integer.MAX_VALUE;
-                        int yMax = Integer.MIN_VALUE;
-                        int yMin = Integer.MAX_VALUE;
-                        int yVal = 0;
-                        int xVal = 0;
-                        Map<Long, Long> valueMap = new HashMap<>();
-
-                        for (Tuple2<Integer, Integer> v : iterable) {
-                            if (xMax <= v.f0) {
-                                xMax = v.f0;
+                        for (Tuple3<LocalDateTime, Double, Double> v : iterable) {
+                            if (xMax <= v.f1) {
+                                xMax = v.f1;
                             }
-                            if (xMin >= v.f0) {
-                                xMin = v.f0;
+                            if (xMin >= v.f1) {
+                                xMin = v.f1;
                             }
-                            if (yMax <= v.f1) {
-                                yMax = v.f1;
+                            if (yMax <= v.f2) {
+                                yMax = v.f2;
                             }
-                            if (yMin >= v.f1) {
-                                yMin = v.f1;
+                            if (yMin >= v.f2) {
+                                yMin = v.f2;
                             }
                         }
 
-                        int ydiv = yMax - yMin;
-                        int xdiv = xMax - xMin;
+                        double ydiv = yMax - yMin;
+                        double xdiv = xMax - xMin;
 
-                        for (Tuple2<Integer, Integer> v : iterable) {
+                        for (Tuple3<LocalDateTime, Double, Double> v : iterable) {
                             if (ydiv != 0){
-                                yVal = Math.round(y * (v.f1 - yMin) / ydiv);
+                                yVal = Math.round(y * (v.f2 - yMin) / ydiv);
                             }else {
-                                yVal = Math.round(y * (v.f1 - yMin) / 1);
+                                yVal = Math.round(y * (v.f2 - yMin) / 1);
                             }
                             if (xdiv != 0){
-                                xVal = Math.round(x * (v.f0 - xMin) / xdiv);
+                                xVal = Math.round(x * (v.f1 - xMin) / xdiv);
                             }else {
-                                xVal = Math.round(x * (v.f0 - xMin) / 1);
+                                xVal = Math.round(x * (v.f1 - xMin) / 1);
 
                             }
 
-                            long key = ((long)xVal) << 32 | yVal;
+                            double key = x* yVal + xVal;
+                            double[] data = new double[]{v.f1, v.f2};
 
-                            valueMap.putIfAbsent(key, 1L);
-                            valueMap.computeIfPresent(key, (k, value) -> value+1);
+                            Point point = new Point(data);
 
-                            // if (valueMap.isEmpty() || !valueMap.contains(new Tuple2<>(xVal, yVal))) {
-                            //     valueMap.add(new Tuple2<>(xVal, yVal));
-                            //     collector.collect(new Tuple2<>(xVal, yVal));
-                            // }
+                            //count number of occurences
+                            valueMap.computeIfPresent(key, (k, value) -> new Tuple3<LocalDateTime,Point,Integer>(value.f0, value.f1, value.f2+1));
+                            //only save the first incoming point per window
+                            valueMap.putIfAbsent(key, new Tuple3<LocalDateTime,Point,Integer>(v.f0, point, 1));
                         }
 
                         valueMap.entrySet().stream()
                                 .forEach(e -> {
-                                    int xKey = (int)(e.getKey() >>32);
-                                    int yKey = e.getKey().intValue();
-                                    collector.collect(new Tuple3<Integer, Integer, Long>(xKey, yKey, e.getValue()));
+                                    collector.collect(new Tuple4<LocalDateTime, Double, Point, Integer>(e.getValue().f0, e.getKey(), e.getValue().f1, e.getValue().f2));
                                 });
 
                     }
                 });
 
-        DataStream<Point> points = window.map(new MapFunction<Tuple3<Integer, Integer, Long>, Point>() {
-            @Override
-            public Point map(Tuple3<Integer, Integer, Long> input) throws Exception {
-
-                double[] data = new double[]{input.f0, input.f1};
-
-                Point point = new Point(data);
-
-                return point;
-            }
-        });
-
         timer.stop();
         log.info("Time for VDDA " + timer.getTime() + "ms");
 
-        return points;
+        return resultStream;
 
     }
 
