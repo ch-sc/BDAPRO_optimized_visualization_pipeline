@@ -1,23 +1,15 @@
 package de.tuberlin.dima.bdapro.data.taxi;
 
-import java.io.OutputStream;
+import java.time.LocalDateTime;
 
 import de.tuberlin.dima.bdapro.data.StreamProcessor;
-import de.tuberlin.dima.bdapro.error.BusinessException;
+import de.tuberlin.dima.bdapro.model.ClusterCenter;
 import de.tuberlin.dima.bdapro.model.Point;
-import org.apache.flink.api.common.functions.FilterFunction;
-import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.streaming.api.TimeCharacteristic;
+import org.apache.commons.lang3.NotImplementedException;
+import org.apache.flink.api.java.tuple.Tuple3;
+import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
-import org.apache.flink.streaming.api.functions.windowing.AllWindowFunction;
-import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
-import org.apache.flink.streaming.api.windowing.time.Time;
-import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
-import org.apache.flink.util.Collector;
 
 /**
  * Applies M4 transformation to data stream
@@ -32,7 +24,7 @@ public class SimpleStreamDataProcessor extends StreamProcessor {
         this.env = env;
     }
 
-
+/*
     @Override
     public DataStream<Point> scatterPlot(int x, int y) {
 
@@ -112,11 +104,16 @@ public class SimpleStreamDataProcessor extends StreamProcessor {
 
         return points;
     }
-
-
-    public void streamedScatterPlot(OutputStream outputStream) {
-
+*/
+    
+    @Override
+    public DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> scatterPlot(int xBound, int yBound) {
+        throw new NotImplementedException("SimpleStreamDataProcessor not supported");
     }
-
-
+    
+    
+    @Override
+    public DataStream<Tuple3<LocalDateTime, Point, ClusterCenter>> cluster(int xBound, int yBound, int k, int maxIter) {
+        throw new NotImplementedException("SimpleStreamDataProcessor not supported");
+    }
 }

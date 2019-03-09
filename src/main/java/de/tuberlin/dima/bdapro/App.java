@@ -1,5 +1,6 @@
 package de.tuberlin.dima.bdapro;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 
 import de.tuberlin.dima.bdapro.config.AppConfigLoader;
@@ -8,9 +9,20 @@ import de.tuberlin.dima.bdapro.config.ServiceConfiguration;
 import de.tuberlin.dima.bdapro.config.ServiceProperties;
 import de.tuberlin.dima.bdapro.data.DataProcessor;
 import de.tuberlin.dima.bdapro.data.StreamProcessor;
+import de.tuberlin.dima.bdapro.error.BusinessException;
+import de.tuberlin.dima.bdapro.model.ClusterCenter;
 import de.tuberlin.dima.bdapro.model.ExecutionType;
+import de.tuberlin.dima.bdapro.model.Point;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.commons.lang3.time.StopWatch;
+import org.apache.flink.api.common.functions.MapFunction;
+import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.java.tuple.Tuple3;
+import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
+import org.apache.flink.streaming.api.windowing.time.Time;
 
 @Slf4j
 public class App {
@@ -45,10 +57,12 @@ public class App {
 			}
 		}*/
 		
-		final DataProcessor dataProcessor = ServiceConfiguration.dataProcessor(ExecutionType.SIMPLESTREAMING, null);
-		final StreamProcessor streamProcessor = ServiceConfiguration.streamProcessor(ExecutionType.SIMPLESTREAMING, null);
+		//final DataProcessor dataProcessor = ServiceConfiguration.dataProcessor(ExecutionType.SIMPLESTREAMING, null);
+		final StreamProcessor streamProcessor1 = ServiceConfiguration.streamProcessor(ExecutionType.SIMPLESTREAMING, null);
+		final StreamProcessor streamProcessor2 = ServiceConfiguration.streamProcessor(ExecutionType.M4STREAMING, null);
+		final StreamProcessor cluster = ServiceConfiguration.streamProcessor(ExecutionType.KMEANSVDDA, null);
 		
-		int x = 1000, y = 1000;
+		int x = 320, y = 480;
 		/*
 		int[][] scatter;
 		switch (executionType) {
@@ -66,9 +80,17 @@ public class App {
 		
 		logResult(scatter, x, y);*/
 
-		System.out.println("I'm here.");
+		//DataStream<Point> points = streamProcessor1.scatterPlot(x,y);
 
-		streamProcessor.scatterPlot(x,y);
+		//DataStream<Tuple2<Point, ClusterCenter>> clusters = streamProcessor1.cluster(5, 5, points);
+
+		StopWatch timer = new StopWatch();
+		timer.start();
+
+		DataStream<Tuple3<LocalDateTime, Point, ClusterCenter>> clusters = cluster.cluster(x,y,5,5);
+
+		timer.stop();
+		log.info("Time for total " + timer.getTime() + "ms");
 
 	}
 	

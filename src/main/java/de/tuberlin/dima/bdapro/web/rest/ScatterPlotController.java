@@ -1,9 +1,7 @@
 package de.tuberlin.dima.bdapro.web.rest;
 
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.ByteBuffer;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
@@ -11,13 +9,14 @@ import javax.servlet.http.HttpServletResponse;
 import de.tuberlin.dima.bdapro.data.StreamProcessor;
 import de.tuberlin.dima.bdapro.error.ErrorType;
 import de.tuberlin.dima.bdapro.error.ErrorTypeException;
+import de.tuberlin.dima.bdapro.model.ClusterCenter;
 import de.tuberlin.dima.bdapro.model.Point;
 import de.tuberlin.dima.bdapro.service.DataService;
 import de.tuberlin.dima.bdapro.service.MessagingService;
 import de.tuberlin.dima.bdapro.util.DataTransformer;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.flink.api.common.serialization.SerializationSchema;
+import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -35,14 +34,18 @@ public class ScatterPlotController {
 	
 	private final DataService dataService;
 	private final MessagingService messagingService;
-	private final StreamProcessor streamProcessor;
+	private final StreamProcessor m4StreamProcessor;
+	private final StreamProcessor vddaStreamProcessor;
 	
 	
 	@Autowired
-	public ScatterPlotController(DataService dataService, MessagingService messagingService, @Qualifier("data-processor.simpleStream") StreamProcessor streamProcessor) {
+	public ScatterPlotController(DataService dataService, MessagingService messagingService,
+			@Qualifier("data-processor.simpleStream") StreamProcessor m4StreamProcessor,
+			@Qualifier("data-processor.kMeansVDDA") StreamProcessor vddaStreamProcessor) {
 		this.dataService = dataService;
 		this.messagingService = messagingService;
-		this.streamProcessor = streamProcessor;
+		this.m4StreamProcessor = m4StreamProcessor;
+		this.vddaStreamProcessor = vddaStreamProcessor;
 	}
 	
 	
@@ -68,30 +71,59 @@ public class ScatterPlotController {
 	}
 	
 	
-	@GetMapping(value = "/scatter/stream", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+	@GetMapping(value = "/scatter/stream")
 	public Object[] scatterPlot(@ModelAttribute("bounds") DimensionalityBounds bounds,
 			HttpServletResponse response) {
-
-		DataStream<Point> points;
 		
+		DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> points;
+		/*
 		try (OutputStream out = response.getOutputStream()) {
 			points = dataService.streamingScatterPlot(bounds.x, bounds.y);
 			points.writeToSocket("visualisation-pipeline-service", 8082, new SerializationSchema<Point>() {
 				@Override
-				public byte[] serialize(Point point) {
+				public byte[] serialize(DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> points) {
 					return ByteBuffer.allocate(4).putDouble(point.getFields()[0]).array();
 				}
 			});
 		} catch (IOException e) {
 			throw new RuntimeException(ExceptionUtils.getMessage(e), e);
 		}
-
+*/
 		List<Double> list = new ArrayList<Double>();
 		list.add(5.9);
 		list.add(6.0);
-
+		
 		return list.toArray();
-
+		
+	}
+	
+	
+	//NOT WORKING YET!
+	@GetMapping(value = "/scatter/clusterstream")
+	public Object[] scatterPlot(@ModelAttribute("bounds") DimensionalityBounds bounds, int k, int maxIter,
+			HttpServletResponse response) {
+		
+		DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> points;
+		DataStream<Tuple2<Point, ClusterCenter>> clusteredPoints;
+/*
+        try (OutputStream out = response.getOutputStream()) {
+            points = dataService.streamingScatterPlot(bounds.x, bounds.y);
+            points.writeToSocket("visualisation-pipeline-service", 8082, new SerializationSchema<Point>() {
+                @Override
+                public byte[] serialize(Point point) {
+                    return ByteBuffer.allocate(4).putDouble(point.getFields()[0]).array();
+                }
+            });
+        } catch (IOException e) {
+            throw new RuntimeException(ExceptionUtils.getMessage(e), e);
+        }
+*/
+		List<Double> list = new ArrayList<Double>();
+		list.add(5.9);
+		list.add(6.0);
+		
+		return list.toArray();
+		
 	}
 	
 	
