@@ -25,13 +25,22 @@ import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
 
 /**
- * Applies M4 transformation to data stream
+ * Applies VDDA transformation to data stream
  */
 @Slf4j
 public class VDDAProcessor extends StreamProcessor {
 
+    /**
+     *
+     * Calculates the VDDA transformation for the inputed data
+     *
+     * @param x Number of Pixels in the x direction
+     * @param y Number of Pixels in the y direction
+     * @return data stream with a timestamp, a key for the display bucket, the coordinates of the point, and the number of points inside one bucket
+     */
+
     @Override
-    public DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> scatterPlot(int x, int y) {
+    public DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> scatterPlot(int x, int y, Time window, Time slide) {
 
         StopWatch timer = new StopWatch();
         timer.start();
@@ -60,7 +69,7 @@ public class VDDAProcessor extends StreamProcessor {
             @Override
             public void flatMap(String s, Collector<Tuple3<LocalDateTime, Double, Double>> out) throws Exception {
                 if (!s.equalsIgnoreCase(null)) {
-                    String[] helper = s.split(",");
+                    String[] helper = s.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
                     if (helper.length >= 10) {
                         String helper2 = helper[1];
                         String[] helper3 = helper2.split(" ");
@@ -79,7 +88,7 @@ public class VDDAProcessor extends StreamProcessor {
                     public long extractAscendingTimestamp(Tuple3<LocalDateTime,Double, Double> event) {
                         return Long.valueOf(event.f0.getSecond()+event.f0.getMinute()+event.f0.getHour()+event.f0.getDayOfYear()+event.f0.getYear());
                     }
-                }).keyBy(0).window(SlidingEventTimeWindows.of(Time.seconds(100),Time.seconds(20)))
+                }).keyBy(0).window(SlidingEventTimeWindows.of(window,slide))
                 .apply(new WindowFunction<Tuple3<LocalDateTime, Double, Double>, Tuple4<LocalDateTime, Double, Point, Integer>, Tuple, TimeWindow>() {
                     @Override
                     public void apply(Tuple tuple, TimeWindow timeWindow, Iterable<Tuple3<LocalDateTime, Double, Double>> iterable, Collector<Tuple4<LocalDateTime, Double, Point, Integer>> collector) throws Exception {

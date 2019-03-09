@@ -24,7 +24,7 @@ import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
 
 /**
- * Applies M4 transformation to data stream
+ * Generates a data stream with points for a scatter over a given window
  */
 @Slf4j
 public class StreamDataProcessor extends StreamProcessor {
@@ -36,9 +36,17 @@ public class StreamDataProcessor extends StreamProcessor {
         this.env = env;
     }
 
+    /**
+     *
+     * Transforms the inputted data into a data stream for the scatter plot
+     *
+     * @param x Number of Pixels in the x direction
+     * @param y Number of Pixels in the y direction
+     * @return data stream with a timestamp, a key for the display bucket which is set to 0.0 for this case, the coordinates of the point, and the number of points inside one bucket which will always be 1 in this case
+     */
 
     @Override
-    public DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> scatterPlot(int x, int y) {
+    public DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> scatterPlot(int x, int y, Time window, Time slide) {
 
         StopWatch timer = new StopWatch();
         timer.start();
@@ -67,7 +75,7 @@ public class StreamDataProcessor extends StreamProcessor {
             @Override
             public void flatMap(String s, Collector<Tuple3<LocalDateTime, Double, Double>> out) throws Exception {
                 if (!s.equalsIgnoreCase(null)) {
-                    String[] helper = s.split(",");
+                    String[] helper = s.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
                     if (helper.length >= 10) {
                         String helper2 = helper[1];
                         String[] helper3 = helper2.split(" ");
@@ -87,7 +95,7 @@ public class StreamDataProcessor extends StreamProcessor {
                     public long extractAscendingTimestamp(Tuple3<LocalDateTime,Double, Double> event) {
                         return Long.valueOf(event.f0.getSecond()+event.f0.getMinute()+event.f0.getHour()+event.f0.getDayOfYear()+event.f0.getYear());
                     }
-                }).keyBy(0).window(SlidingEventTimeWindows.of(Time.seconds(100),Time.seconds(20)))
+                }).keyBy(0).window(SlidingEventTimeWindows.of(window,slide))
                 .apply(new WindowFunction<Tuple3<LocalDateTime, Double, Double>, Tuple4<LocalDateTime, Double, Point, Integer>, Tuple, TimeWindow>()  {
 
 
