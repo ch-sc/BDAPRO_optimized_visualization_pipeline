@@ -14,6 +14,7 @@ import de.tuberlin.dima.bdapro.error.ErrorTypeException;
 import de.tuberlin.dima.bdapro.model.Point;
 import de.tuberlin.dima.bdapro.service.DataService;
 import de.tuberlin.dima.bdapro.service.MessagingService;
+import de.tuberlin.dima.bdapro.util.DataTransformer;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.flink.api.common.serialization.SerializationSchema;
@@ -63,7 +64,7 @@ public class ScatterPlotController {
 		}
 		
 		final int[][] dataGrid = dataService.scatterPlot(bounds.x, bounds.y);
-		return convert(dataGrid);
+		return DataTransformer.gridToCoordinates(dataGrid);
 	}
 	
 	
@@ -97,22 +98,6 @@ public class ScatterPlotController {
 	@GetMapping(value = "/scatter/stream/start")
 	public void writeToQueue() {
 		messagingService.produce();
-	}
-	
-	
-	private Object[] convert(int[][] grid) {
-		List<int[]> list = new ArrayList<>(grid.length);
-		
-		for (int i = 0; i < grid.length; i++) {
-			final int[] row = grid[i];
-			for (int j = 0; j < row.length; j++) {
-				if (row[j] == 0) {
-					continue;
-				}
-				list.add(new int[] { i, j, row[j] });
-			}
-		}
-		return list.toArray();
 	}
 	
 	
