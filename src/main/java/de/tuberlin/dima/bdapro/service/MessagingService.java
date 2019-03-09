@@ -30,7 +30,7 @@ public class MessagingService {
 	public void produce() {
 		TwoDimensionalPlotSto plot2d = new TwoDimensionalPlotSto();
 		plot2d.setData(new int[100][100]);
-		createDataGrid(plot2d);
+		randomDataGrid(plot2d);
 		
 		Object[] payload = DataTransformer.gridToCoordinates(plot2d.getData());
 		
@@ -46,7 +46,7 @@ public class MessagingService {
 	}
 	
 	
-	private void createDataGrid(TwoDimensionalPlotSto plot) {
+	private void randomDataGrid(TwoDimensionalPlotSto plot) {
 		int[][] data = plot.getData();
 		int[] row;
 		for (int r = 0; r < data.length; r++) {

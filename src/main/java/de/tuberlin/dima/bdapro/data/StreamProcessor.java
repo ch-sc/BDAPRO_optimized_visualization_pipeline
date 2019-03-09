@@ -9,9 +9,10 @@ import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.datastream.DataStream;
 
 public abstract class StreamProcessor {
-
-    abstract public DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> scatterPlot(int xBound, int yBound);
-
-    abstract public DataStream<Tuple3<LocalDateTime,Point, ClusterCenter>> cluster(int xBound, int yBound, int k, int maxIter);
-
-    }
+	
+	abstract public DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> scatterPlot(int xBound, int yBound);
+	
+	abstract public DataStream<Tuple3<LocalDateTime, Point, ClusterCenter>> cluster(int xBound, int yBound, int k,
+			int maxIter);
+	
+}
