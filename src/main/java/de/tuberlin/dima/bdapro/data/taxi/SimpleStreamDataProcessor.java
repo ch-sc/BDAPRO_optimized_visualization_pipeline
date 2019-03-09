@@ -1,6 +1,5 @@
 package de.tuberlin.dima.bdapro.data.taxi;
 
-import java.util.*;
 import java.io.OutputStream;
 
 import de.tuberlin.dima.bdapro.data.StreamProcessor;

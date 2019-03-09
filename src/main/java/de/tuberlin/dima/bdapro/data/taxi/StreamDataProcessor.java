@@ -1,7 +1,8 @@
 package de.tuberlin.dima.bdapro.data.taxi;
 
-import java.util.*;
 import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 import de.tuberlin.dima.bdapro.data.StreamProcessor;
 import de.tuberlin.dima.bdapro.error.BusinessException;
@@ -20,12 +21,10 @@ import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindo
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
-import scala.Int;
 
 /**
  * Applies M4 transformation to data stream
  */
-
 public class StreamDataProcessor extends StreamProcessor {
 
     private final StreamExecutionEnvironment env;

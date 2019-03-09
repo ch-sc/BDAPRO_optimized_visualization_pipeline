@@ -1,4 +1,4 @@
-package de.tuberlin.dima.bdapro.data.dto;
+package de.tuberlin.dima.bdapro.model.dto;
 
 import lombok.Data;
 

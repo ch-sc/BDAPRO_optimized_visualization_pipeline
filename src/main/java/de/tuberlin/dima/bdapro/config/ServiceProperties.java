@@ -1,6 +1,7 @@
 package de.tuberlin.dima.bdapro.config;
 
 
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -15,10 +16,8 @@ public class ServiceProperties {
 	private DataConfig data = new DataConfig();
 	private FlinkConfig flink = new FlinkConfig();
 	
-	@Getter
-	@Setter
-	@ToString
-	static class FlinkConfig {
+	@Data
+	public static class FlinkConfig {
 		
 		String[] args;
 	}

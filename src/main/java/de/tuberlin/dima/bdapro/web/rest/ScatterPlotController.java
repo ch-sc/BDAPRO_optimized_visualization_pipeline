@@ -5,27 +5,21 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
-import javax.websocket.server.PathParam;
 
-import de.tuberlin.dima.bdapro.data.taxi.StreamDataProcessor;
+import de.tuberlin.dima.bdapro.data.StreamProcessor;
 import de.tuberlin.dima.bdapro.error.ErrorType;
 import de.tuberlin.dima.bdapro.error.ErrorTypeException;
-import de.tuberlin.dima.bdapro.model.ExecutionType;
 import de.tuberlin.dima.bdapro.model.Point;
 import de.tuberlin.dima.bdapro.service.DataService;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.extern.java.Log;
-import lombok.extern.log4j.Log4j;
+import de.tuberlin.dima.bdapro.service.MessagingService;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.flink.api.common.serialization.SerializationSchema;
-import org.apache.flink.runtime.util.IntArrayList;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -39,13 +33,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class ScatterPlotController {
 	
 	private final DataService dataService;
-	private final StreamDataProcessor streamDataProcessor;
+	private final MessagingService messagingService;
+	private final StreamProcessor streamProcessor;
 	
 	
 	@Autowired
-	public ScatterPlotController(DataService dataService, StreamDataProcessor streamDataProcessor) {
+	public ScatterPlotController(DataService dataService, MessagingService messagingService, @Qualifier("data-processor.simpleStream") StreamProcessor streamProcessor) {
 		this.dataService = dataService;
-		this.streamDataProcessor = streamDataProcessor;
+		this.messagingService = messagingService;
+		this.streamProcessor = streamProcessor;
 	}
 	
 	
@@ -95,6 +91,12 @@ public class ScatterPlotController {
 
 		return list.toArray();
 
+	}
+	
+	
+	@GetMapping(value = "/scatter/stream/start")
+	public void writeToQueue() {
+		messagingService.produce();
 	}
 	
 	

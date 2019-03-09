@@ -44,6 +44,19 @@ Good knowledge in a low-level programming language, e.g. C/C++
 Good knowledge in various visualization techniques
 </li>
 </ul>
+
+
+<h2>RabbitMQ</h2>
+Start the docker image: (EXPOSE 5672:5672 8090:15672)
+
+```
+docker run -d --name rabbitmq --hostname my-rabbit -p 5672:5672 -p 8090:15672 -e RABBITMQ_DEFAULT_USER=user -e RABBITMQ_DEFAULT_PASS=password rabbitmq:3-management
+```
+
+Enter web UI @ [localhost:8090] and create an Exchange 'BDAPRO' and a Queue 'BDAPRO'. Then create a binding for both.
+
+
+
 <h2>References</h2>
 [1] U. Jugel et. al.; M4: A Visualization-Oriented Time Series Data Aggregation;
 URL: http://www.vldb.org/pvldb/vol7/p797-jugel.pdf

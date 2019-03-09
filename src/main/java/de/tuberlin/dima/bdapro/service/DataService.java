@@ -1,10 +1,7 @@
 package de.tuberlin.dima.bdapro.service;
 
-import java.io.OutputStream;
-
 import de.tuberlin.dima.bdapro.data.DataProcessor;
 import de.tuberlin.dima.bdapro.data.StreamProcessor;
-import de.tuberlin.dima.bdapro.data.taxi.StreamDataProcessor;
 import de.tuberlin.dima.bdapro.model.Point;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.springframework.beans.factory.annotation.Autowired;
