@@ -36,6 +36,11 @@ public class StreamDataProcessor extends StreamProcessor {
         this.env = env;
     }
 
+    @Override
+    public DataStream<Tuple3<LocalDateTime, Point, ClusterCenter>> cluster(int xBound, int yBound, int k, int maxIter, Time window, Time slide) {
+        return null;
+    }
+
     /**
      *
      * Transforms the inputted data into a data stream for the scatter plot
@@ -125,11 +130,6 @@ public class StreamDataProcessor extends StreamProcessor {
         log.info("Time for Streamprocessing " + timer.getTime() + "ms");
 
         return points;
-    }
-
-    @Override
-    public DataStream<Tuple3<LocalDateTime, Point, ClusterCenter>> cluster(int xBound, int yBound, int k, int maxIter) {
-        return null;
     }
 
 }

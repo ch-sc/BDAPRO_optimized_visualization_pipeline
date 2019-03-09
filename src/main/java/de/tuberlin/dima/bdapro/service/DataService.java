@@ -7,6 +7,7 @@ import de.tuberlin.dima.bdapro.model.Point;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.windowing.time.Time;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -48,9 +49,9 @@ public class DataService {
 		return sequentialDataProcessor.scatterPlot();
 	}
 
-	public DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> streamingScatterPlot(int x, int y) { return streamProcessor.scatterPlot(x,y); }
+	public DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> streamingScatterPlot(int x, int y, Time window, Time slide) { return streamProcessor.scatterPlot(x,y, window, slide); }
 
-	public DataStream<Tuple3<LocalDateTime, Point, ClusterCenter>> cluster(int x, int y, int k, int maxIter) { return streamProcessor.cluster(x,y, k, maxIter); }
+	public DataStream<Tuple3<LocalDateTime, Point, ClusterCenter>> cluster(int x, int y, int k, int maxIter, Time window, Time slide) { return streamProcessor.cluster(x,y, k, maxIter, window, slide); }
 
 	
 }

@@ -175,7 +175,7 @@ public class KMeansSimple extends StreamProcessor {
         }).windowAll(SlidingEventTimeWindows.of(window,slide)).sum(0);
 
 
-        count.writeAsCsv("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/VDDA/100000/2/");
+        count.writeAsCsv("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/VDDA/yellow_tripdata_2017-12/1/");
 
         try {
             env.execute("Streaming Iteration Example");

@@ -30,6 +30,19 @@ import org.apache.flink.util.Collector;
 @Slf4j
 public class VDDAProcessor extends StreamProcessor {
 
+
+    private final StreamExecutionEnvironment env;
+
+
+    public VDDAProcessor(StreamExecutionEnvironment env) {
+        this.env = env;
+    }
+
+    @Override
+    public DataStream<Tuple3<LocalDateTime, Point, ClusterCenter>> cluster(int xBound, int yBound, int k, int maxIter, Time window, Time slide) {
+        return null;
+    }
+
     /**
      *
      * Calculates the VDDA transformation for the inputed data
@@ -83,12 +96,12 @@ public class VDDAProcessor extends StreamProcessor {
         });
 
         DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> resultStream = pDataStream
-                .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple3<LocalDateTime,Double,Double>>() {
+                .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple3<LocalDateTime, Double, Double>>() {
                     @Override
-                    public long extractAscendingTimestamp(Tuple3<LocalDateTime,Double, Double> event) {
-                        return Long.valueOf(event.f0.getSecond()+event.f0.getMinute()+event.f0.getHour()+event.f0.getDayOfYear()+event.f0.getYear());
+                    public long extractAscendingTimestamp(Tuple3<LocalDateTime, Double, Double> event) {
+                        return Long.valueOf(event.f0.getSecond() + event.f0.getMinute() + event.f0.getHour() + event.f0.getDayOfYear() + event.f0.getYear());
                     }
-                }).keyBy(0).window(SlidingEventTimeWindows.of(window,slide))
+                }).keyBy(0).window(SlidingEventTimeWindows.of(window, slide))
                 .apply(new WindowFunction<Tuple3<LocalDateTime, Double, Double>, Tuple4<LocalDateTime, Double, Point, Integer>, Tuple, TimeWindow>() {
                     @Override
                     public void apply(Tuple tuple, TimeWindow timeWindow, Iterable<Tuple3<LocalDateTime, Double, Double>> iterable, Collector<Tuple4<LocalDateTime, Double, Point, Integer>> collector) throws Exception {
@@ -100,7 +113,7 @@ public class VDDAProcessor extends StreamProcessor {
                         double yMin = Double.MAX_VALUE;
                         double yVal = 0;
                         double xVal = 0;
-                        Map<Double, Tuple3<LocalDateTime,Point, Integer>> valueMap = new HashMap<>();
+                        Map<Double, Tuple3<LocalDateTime, Point, Integer>> valueMap = new HashMap<>();
 
                         for (Tuple3<LocalDateTime, Double, Double> v : iterable) {
                             if (xMax <= v.f1) {
@@ -121,27 +134,27 @@ public class VDDAProcessor extends StreamProcessor {
                         double xdiv = xMax - xMin;
 
                         for (Tuple3<LocalDateTime, Double, Double> v : iterable) {
-                            if (ydiv != 0){
+                            if (ydiv != 0) {
                                 yVal = Math.round(y * (v.f2 - yMin) / ydiv);
-                            }else {
+                            } else {
                                 yVal = Math.round(y * (v.f2 - yMin) / 1);
                             }
-                            if (xdiv != 0){
+                            if (xdiv != 0) {
                                 xVal = Math.round(x * (v.f1 - xMin) / xdiv);
-                            }else {
+                            } else {
                                 xVal = Math.round(x * (v.f1 - xMin) / 1);
 
                             }
 
-                            double key = x* yVal + xVal;
+                            double key = x * yVal + xVal;
                             double[] data = new double[]{v.f1, v.f2};
 
                             Point point = new Point(data);
 
                             //count number of occurences
-                            valueMap.computeIfPresent(key, (k, value) -> new Tuple3<LocalDateTime,Point,Integer>(value.f0, value.f1, value.f2+1));
+                            valueMap.computeIfPresent(key, (k, value) -> new Tuple3<LocalDateTime, Point, Integer>(value.f0, value.f1, value.f2 + 1));
                             //only save the first incoming point per window
-                            valueMap.putIfAbsent(key, new Tuple3<LocalDateTime,Point,Integer>(v.f0, point, 1));
+                            valueMap.putIfAbsent(key, new Tuple3<LocalDateTime, Point, Integer>(v.f0, point, 1));
                         }
 
                         valueMap.entrySet().stream()
@@ -156,19 +169,6 @@ public class VDDAProcessor extends StreamProcessor {
         log.info("Time for VDDA " + timer.getTime() + "ms");
 
         return resultStream;
-
-    }
-
-    @Override
-    public DataStream<Tuple3<LocalDateTime, Point, ClusterCenter>> cluster(int xBound, int yBound, int k, int maxIter) {
-        return null;
-    }
-
-    private final StreamExecutionEnvironment env;
-
-
-    public VDDAProcessor(StreamExecutionEnvironment env) {
-        this.env = env;
     }
 
 

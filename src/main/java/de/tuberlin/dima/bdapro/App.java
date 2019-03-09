@@ -59,7 +59,7 @@ public class App {
 		
 		//final DataProcessor dataProcessor = ServiceConfiguration.dataProcessor(ExecutionType.SIMPLESTREAMING, null);
 		final StreamProcessor streamProcessor1 = ServiceConfiguration.streamProcessor(ExecutionType.SIMPLESTREAMING, null);
-		final StreamProcessor streamProcessor2 = ServiceConfiguration.streamProcessor(ExecutionType.M4STREAMING, null);
+		final StreamProcessor streamProcessor2 = ServiceConfiguration.streamProcessor(ExecutionType.VDDASTREAMING, null);
 		final StreamProcessor cluster = ServiceConfiguration.streamProcessor(ExecutionType.KMEANSVDDA, null);
 		
 		int x = 320, y = 480;
