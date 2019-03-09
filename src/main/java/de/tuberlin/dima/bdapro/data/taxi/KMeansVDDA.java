@@ -15,10 +15,7 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.java.tuple.Tuple;
-import org.apache.flink.api.java.tuple.Tuple1;
-import org.apache.flink.api.java.tuple.Tuple3;
-import org.apache.flink.api.java.tuple.Tuple4;
+import org.apache.flink.api.java.tuple.*;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -28,6 +25,7 @@ import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindow
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
+import scala.Int;
 
 @Slf4j
 public class KMeansVDDA extends StreamProcessor{
@@ -166,7 +164,26 @@ public class KMeansVDDA extends StreamProcessor{
         //env.execute();
 
         //System.out.println(env.getExecutionPlan());
+        timer.stop();
 
+        DataStream<Tuple2<ClusterCenter, Integer>> clusterCenters = clusters.keyBy(0).window(SlidingEventTimeWindows.of(window,slide)).apply(new WindowFunction<Tuple3<LocalDateTime, Point, ClusterCenter>, Tuple2<ClusterCenter, Integer>, Tuple, TimeWindow>() {
+            @Override
+            public void apply(Tuple tuple, TimeWindow timeWindow, Iterable<Tuple3<LocalDateTime, Point, ClusterCenter>> iterable, Collector<Tuple2<ClusterCenter, Integer>> collector) throws Exception {
+                HashMap<ClusterCenter, Integer> pointsInClusters = new HashMap<>();
+
+                for (Tuple3<LocalDateTime, Point, ClusterCenter> c: iterable){
+                    //check if value already there, if yes, only add count
+                    pointsInClusters.computeIfPresent(c.f2, (k, value) -> value+1);
+                    //only save the first incoming point per window
+                    pointsInClusters.putIfAbsent(c.f2, 1);
+                }
+
+                pointsInClusters.entrySet().stream()
+                        .forEach(e -> {
+                            collector.collect(new Tuple2<ClusterCenter, Integer>(e.getKey(), e.getValue()));
+                        });
+            }
+        });
 
         DataStream<Tuple1<Integer>> count = clusters.map(new MapFunction<Tuple3<LocalDateTime, Point, ClusterCenter>, Tuple1<Integer>>() {
             @Override
@@ -176,7 +193,8 @@ public class KMeansVDDA extends StreamProcessor{
         }).windowAll(SlidingEventTimeWindows.of(window,slide)).sum(0);
 
 
-        count.writeAsCsv("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/VDDA/yellow_tripdata_2017-12/1/");
+        clusterCenters.writeAsCsv("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/VDDA/cluster/yellow_tripdata_2017-12/1/");
+        count.writeAsCsv("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/VDDA/count/yellow_tripdata_2017-12/1/");
 
         try {
             env.execute("Streaming Iteration Example");
@@ -184,7 +202,7 @@ public class KMeansVDDA extends StreamProcessor{
             throw new BusinessException(e.getMessage(), e);
         }
 
-        timer.stop();
+
         log.info("Time for KMeans VDDA " + timer.getTime() + "ms");
 
         return clusters;
@@ -246,11 +264,13 @@ public class KMeansVDDA extends StreamProcessor{
 
         DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> resultStream = pDataStream
                 .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple3<LocalDateTime,Double,Double>>() {
-            @Override
-            public long extractAscendingTimestamp(Tuple3<LocalDateTime,Double, Double> event) {
-                return Long.valueOf(event.f0.getSecond()+event.f0.getMinute()+event.f0.getHour()+event.f0.getDayOfYear()+event.f0.getYear());
-            }
-        }).keyBy(0).window(SlidingEventTimeWindows.of(window,slide))
+                    @Override
+                    public long extractAscendingTimestamp(Tuple3<LocalDateTime,Double, Double> event) {
+                        return Long.valueOf(event.f0.getSecond()+event.f0.getMinute()+event.f0.getHour()+event.f0.getDayOfYear()+event.f0.getYear());
+                    }
+                })
+                .keyBy(0)
+                .window(SlidingEventTimeWindows.of(window,slide))
                 .apply(new WindowFunction<Tuple3<LocalDateTime, Double, Double>, Tuple4<LocalDateTime, Double, Point, Integer>, Tuple, TimeWindow>() {
                     @Override
                     public void apply(Tuple tuple, TimeWindow timeWindow, Iterable<Tuple3<LocalDateTime, Double, Double>> iterable, Collector<Tuple4<LocalDateTime, Double, Point, Integer>> collector) throws Exception {

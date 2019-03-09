@@ -26,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 @Slf4j
@@ -165,7 +166,26 @@ public class KMeansSimple extends StreamProcessor {
         //env.execute();
 
         //System.out.println(env.getExecutionPlan());
+        timer.stop();
 
+        DataStream<Tuple2<ClusterCenter, Integer>> clusterCenters = clusters.keyBy(0).window(SlidingEventTimeWindows.of(window,slide)).apply(new WindowFunction<Tuple3<LocalDateTime, Point, ClusterCenter>, Tuple2<ClusterCenter, Integer>, Tuple, TimeWindow>() {
+            @Override
+            public void apply(Tuple tuple, TimeWindow timeWindow, Iterable<Tuple3<LocalDateTime, Point, ClusterCenter>> iterable, Collector<Tuple2<ClusterCenter, Integer>> collector) throws Exception {
+                HashMap<ClusterCenter, Integer> pointsInClusters = new HashMap<>();
+
+                for (Tuple3<LocalDateTime, Point, ClusterCenter> c: iterable){
+                    //check if value already there, if yes, only add count
+                    pointsInClusters.computeIfPresent(c.f2, (k, value) -> value+1);
+                    //only save the first incoming point per window
+                    pointsInClusters.putIfAbsent(c.f2, 1);
+                }
+
+                pointsInClusters.entrySet().stream()
+                        .forEach(e -> {
+                            collector.collect(new Tuple2<ClusterCenter, Integer>(e.getKey(), e.getValue()));
+                        });
+            }
+        });
 
         DataStream<Tuple1<Integer>> count = clusters.map(new MapFunction<Tuple3<LocalDateTime, Point, ClusterCenter>, Tuple1<Integer>>() {
             @Override
@@ -175,7 +195,8 @@ public class KMeansSimple extends StreamProcessor {
         }).windowAll(SlidingEventTimeWindows.of(window,slide)).sum(0);
 
 
-        count.writeAsCsv("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/VDDA/yellow_tripdata_2017-12/1/");
+        clusterCenters.writeAsCsv("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/VDDA/cluster/yellow_tripdata_2017-12/1/");
+        count.writeAsCsv("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/VDDA/count/yellow_tripdata_2017-12/1/");
 
         try {
             env.execute("Streaming Iteration Example");
@@ -183,8 +204,8 @@ public class KMeansSimple extends StreamProcessor {
             throw new BusinessException(e.getMessage(), e);
         }
 
-        timer.stop();
-        log.info("Time for KMeans VDDA " + timer.getTime() + "ms");
+
+        log.info("Time for simple KMeans " + timer.getTime() + "ms");
 
         return clusters;
 
