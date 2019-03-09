@@ -4,14 +4,19 @@ spring:
   jackson:
     default-property-inclusion: NON_NULL
     date-format: com.fasterxml.jackson.databind.util.ISO8601DateFormat
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: user
+    password: password
 service:
   data:
-    data-location: "/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/1000000.csv"
+    data-location: "data/1000000.csv"
   flink:
     args:
       #     - "--input"
       #     - "/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/1000000.csv"
-      - "--output"
-      - "/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/fib-result"
+      # - "--output"
+      # - "/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/fib-result"
 server:
   port: 8082
