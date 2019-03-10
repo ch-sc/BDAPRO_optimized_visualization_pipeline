@@ -33,10 +33,9 @@ import java.util.List;
 @Slf4j
 public class KMeansSimple extends StreamProcessor {
 
-    private final StreamExecutionEnvironment env;
 
     public KMeansSimple(StreamExecutionEnvironment env) {
-        this.env = env;
+		super(env);
     }
 
     /**
@@ -326,6 +325,9 @@ public class KMeansSimple extends StreamProcessor {
 
         return points;
     }
+	
+	
+	private static class ExtractAscendingTimestamp extends AscendingTimestampExtractor<Tuple3<LocalDateTime, Double, Double>> {
 
     private static class ExtractAscendingTimestamp extends AscendingTimestampExtractor<Tuple3<LocalDateTime, Double, Double>> {
 

@@ -31,11 +31,9 @@ import org.apache.flink.util.Collector;
 @Slf4j
 public class StreamDataProcessor extends StreamProcessor {
 
-    private final StreamExecutionEnvironment env;
-
 
     public StreamDataProcessor(StreamExecutionEnvironment env) {
-        this.env = env;
+        super(env);
     }
 
     @Override
@@ -63,7 +61,7 @@ public class StreamDataProcessor extends StreamProcessor {
         // execute the program
 
         //read input file
-        dataStream = env.readTextFile("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/yellow_tripdata_2017-12.csv");
+        dataStream = env.readTextFile("data/yellow_tripdata_2017-12.csv");
 
         //filter for the first two rows
         dataStream = dataStream.filter(new FilterFunction<String>() {

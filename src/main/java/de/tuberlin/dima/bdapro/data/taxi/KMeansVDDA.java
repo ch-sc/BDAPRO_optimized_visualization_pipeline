@@ -31,13 +31,8 @@ import org.apache.flink.util.Collector;
 @Slf4j
 public class KMeansVDDA extends StreamProcessor{
 
-    private final StreamExecutionEnvironment env;
-
-
-
-
     public KMeansVDDA(StreamExecutionEnvironment env) {
-        this.env = env;
+        super(env);
     }
 
     /**
@@ -206,8 +201,8 @@ public class KMeansVDDA extends StreamProcessor{
         //Generates json to generate an execution graph from
         //System.out.println(env.getExecutionPlan());
 
-        clusterCenters.writeAsCsv("data/out/VDDA/yellow_tripdata_2017-12/5/2/cluster/");
-        count.writeAsCsv("data/out/VDDA/yellow_tripdata_2017-12/5/2/count/");
+        //clusterCenters.writeAsCsv("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/VDDA/yellow_tripdata_2017-12/test/2/cluster/");
+        //count.writeAsCsv("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/VDDA/yellow_tripdata_2017-12/test/2/count/");
 
         try {
             env.execute("Streaming Iteration Example");
@@ -240,7 +235,7 @@ public class KMeansVDDA extends StreamProcessor{
         // execute the program
 
         //read input file
-        dataStream = env.readTextFile("data/yellow_tripdata_2017-12.csv");
+        dataStream = env.readTextFile("data/14300_yellow_taxidata.csv");
 
         //filter for the first two rows
         dataStream = dataStream.filter(new FilterFunction<String>() {

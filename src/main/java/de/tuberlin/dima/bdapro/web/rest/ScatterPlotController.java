@@ -68,7 +68,7 @@ public class ScatterPlotController {
 			return dataService.scatterPlot(ExecutionType.SEQUENTIAL);
 		}
 		
-		final int[][] dataGrid = dataService.scatterPlot(ExecutionType.SEQUENTIAL,bounds.x, bounds.y);
+		final int[][] dataGrid = dataService.scatterPlot(ExecutionType.SEQUENTIAL, bounds.x, bounds.y);
 		return DataTransformer.gridToCoordinates(dataGrid);
 	}
 	
@@ -79,34 +79,6 @@ public class ScatterPlotController {
 		dataService.clusterAsync(ExecutionType.KMEANSVDDA, bounds.x, bounds.y, 5, 5, Time.milliseconds(100), Time.milliseconds(100));
 	}
 	
-	
-	//NOT WORKING YET!
-	@GetMapping(value = "/scatter/clusterstream")
-	public Object[] scatterPlot(@ModelAttribute("bounds") DimensionalityBounds bounds, int k, int maxIter,
-			HttpServletResponse response) {
-		
-		DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> points;
-		DataStream<Tuple2<Point, ClusterCenter>> clusteredPoints;
-/*
-        try (OutputStream out = response.getOutputStream()) {
-            points = dataService.streamingScatterPlot(bounds.x, bounds.y);
-            points.writeToSocket("visualisation-pipeline-service", 8082, new SerializationSchema<Point>() {
-                @Override
-                public byte[] serialize(Point point) {
-                    return ByteBuffer.allocate(4).putDouble(point.getFields()[0]).array();
-                }
-            });
-        } catch (IOException e) {
-            throw new RuntimeException(ExceptionUtils.getMessage(e), e);
-        }
-*/
-		List<Double> list = new ArrayList<Double>();
-		list.add(5.9);
-		list.add(6.0);
-		
-		return list.toArray();
-		
-	}
 	
 	
 	@GetMapping(value = "/scatter/stream/start")
