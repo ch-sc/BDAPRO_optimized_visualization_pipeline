@@ -235,7 +235,7 @@ public class KMeansVDDA extends StreamProcessor{
         // execute the program
 
         //read input file
-        dataStream = env.readTextFile("data/14300_yellow_taxidata.csv");
+        dataStream = env.readTextFile("data/file.csv");
 
         //filter for the first two rows
         dataStream = dataStream.filter(new FilterFunction<String>() {

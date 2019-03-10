@@ -61,7 +61,7 @@ public class StreamDataProcessor extends StreamProcessor {
         // execute the program
 
         //read input file
-        dataStream = env.readTextFile("data/yellow_tripdata_2017-12.csv");
+        dataStream = env.readTextFile("data/file.csv");
 
         //filter for the first two rows
         dataStream = dataStream.filter(new FilterFunction<String>() {
