@@ -63,7 +63,7 @@ public class VDDAProcessor extends StreamProcessor {
         // execute the program
 
         //read input file
-        dataStream = env.readTextFile("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/yellow_tripdata_2017-12.csv");
+        dataStream = env.readTextFile("data/yellow_tripdata_2017-12.csv");
 
         //filter for the first two rows
         dataStream = dataStream.filter(new FilterFunction<String>() {

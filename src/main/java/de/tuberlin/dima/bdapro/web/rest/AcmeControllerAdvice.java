@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import de.tuberlin.dima.bdapro.error.CustomError;
 import de.tuberlin.dima.bdapro.error.ErrorType;
 import de.tuberlin.dima.bdapro.error.ErrorTypeException;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 @RestControllerAdvice
+@Slf4j
 public class AcmeControllerAdvice extends ResponseEntityExceptionHandler {
 	
 	@ExceptionHandler(Throwable.class)
@@ -40,6 +42,10 @@ public class AcmeControllerAdvice extends ResponseEntityExceptionHandler {
 		final CustomError error = builder.uri(getRequestUri(request))
 				.trace(getStackTrace(ex))
 				.build();
+		
+		if (status >= 500) {
+			log.error(error.getError(), ex);
+		}
 		
 		return new ResponseEntity<>(error, HttpStatus.valueOf(status));
 	}

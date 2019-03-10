@@ -34,7 +34,7 @@ public class MessagingService {
 	}
 	
 	
-	@Scheduled(fixedRate = 500)
+//	@Scheduled(fixedRate = 500)
 	public void produceRandomMessages() {
 		TwoDimensionalPlotSto plot2d = new TwoDimensionalPlotSto();
 		plot2d.setData(new int[100][100]);

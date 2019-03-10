@@ -1,25 +1,35 @@
 package de.tuberlin.dima.bdapro.service;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.tuberlin.dima.bdapro.data.DataProcessor;
 import de.tuberlin.dima.bdapro.data.StreamProcessor;
 import de.tuberlin.dima.bdapro.model.ClusterCenter;
 import de.tuberlin.dima.bdapro.model.ExecutionType;
 import de.tuberlin.dima.bdapro.model.Point;
-import org.apache.commons.lang3.ArrayUtils;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.flink.api.common.functions.AggregateFunction;
-import org.apache.flink.api.common.functions.ReduceFunction;
+import org.apache.flink.api.common.serialization.SerializationSchema;
+import org.apache.flink.api.common.serialization.SimpleStringSchema;
+import org.apache.flink.api.java.operators.DataSink;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
+import org.apache.flink.streaming.connectors.rabbitmq.RMQSink;
+import org.apache.flink.streaming.connectors.rabbitmq.common.RMQConnectionConfig;
 import org.apache.flink.util.Collector;
 import org.apache.flink.util.OutputTag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,10 +37,14 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 public class DataService {
 	
 	@Autowired
 	private MessagingService messagingService;
+	
+	final OutputTag<Object[]> outputTag = new OutputTag<Object[]>("side-output") {
+	};
 	
 	@Autowired
 	@Qualifier("data-processor.sequential")
@@ -79,34 +93,37 @@ public class DataService {
 		DataStream<Tuple3<LocalDateTime, Point, ClusterCenter>> clusterStream =
 				streamProcessor.cluster(x, y, k, maxIter, window, slide);
 		
+		RMQSink<Object[]> sink = getSink();
 		
-		final OutputTag<Object[]> outputTag = new OutputTag<Object[]>("side-output") {
-		};
-		
-		SingleOutputStreamOperator<Object[]> mainDataStream = clusterStream.keyBy(0)
-				.countWindow(1000)
+		DataStreamSink dataStreamSink = clusterStream
+				.keyBy(0)
+				.windowAll(TumblingEventTimeWindows.of(window))
+//				.countWindow(1000)
 				.aggregate(preAggregate)
-				.process(new ProcessFunction<Object[], Object[]>() {
-					@Override
-					public void processElement(
-							Object[] dataPoints,
-							Context ctx,
-							Collector<Object[]> out) throws Exception {
-						// emit data to regular output
-						out.collect(dataPoints);
-						
-						// send processed data to queue
-						messagingService.send(MessagingService.CLUSTER_DATAPOINT, dataPoints);
-						
-						// emit data to side output
-						ctx.output(outputTag, dataPoints);
-					}
-				});
-		
-		DataStream<Object[]> sideOutputStream = mainDataStream.getSideOutput(outputTag);
+				.addSink(sink);
+//				.process(new SideOutProcess(messagingService, outputTag));
+
+//
+//		DataStream<Object[]> sideOutputStream = mainDataStream.getSideOutput(outputTag);
 	}
 	
 	
+	private RMQSink<Object[]> getSink() {
+		final RMQConnectionConfig connectionConfig = new RMQConnectionConfig.Builder()
+				.setHost("localhost")
+				.setVirtualHost("MyRabbit")
+				.setPort(5672)
+				.setUserName("user")
+				.setPassword("password")
+				.build();
+		
+		return new RMQSink<>(
+				connectionConfig,            // config for the RabbitMQ connection
+				"BDAPRO",                    // name of the RabbitMQ queue to send messages to
+				new SerializationSchemaImpl()
+		);
+		// serialization schema to turn Java objects to messages
+	}
 /*	private void sideOutputExample(DataStream<Tuple3<LocalDateTime, Point, ClusterCenter>> clusterStream) {
 		
 		final OutputTag<double[]> outputTag = new OutputTag<double[]>("side-output") {
@@ -187,36 +204,76 @@ public class DataService {
 		}
 	}
 	
-	private AggregateFunction preAggregate = new AggregateFunction<Tuple3<LocalDateTime, Point, ClusterCenter>, List<int[]>, Object[]>() {
-		@Override
-		public List<int[]> createAccumulator() {
-			return new ArrayList<>(1000);
-		}
+	
+	private AggregateFunction preAggregate =
+			new AggregateFunction<Tuple3<LocalDateTime, Point, ClusterCenter>, List<int[]>, Object[]>() {
+				@Override
+				public List<int[]> createAccumulator() {
+					return new ArrayList<>(1000);
+				}
+				
+				
+				@Override
+				public List<int[]> add(
+						Tuple3<LocalDateTime, Point, ClusterCenter> tuple,
+						List<int[]> acc) {
+					Point dp = tuple.f1;
+					ClusterCenter cluster = tuple.f2;
+					double[] dpPos = dp.getFields();
+					int[] entry = { (int) dpPos[0], (int) dpPos[1], cluster.getId() };
+					acc.add(entry);
+					return acc;
+				}
+				
+				
+				@Override
+				public Object[] getResult(List<int[]> integers) {
+					return integers.toArray();
+				}
+				
+				
+				@Override
+				public List<int[]> merge(List<int[]> acc1, List<int[]> acc2) {
+					acc1.addAll(acc2);
+					return acc1;
+				}
+			};
+	
+	
+	@AllArgsConstructor
+	public static class SideOutProcess extends ProcessFunction<Object[], Object[]> implements Serializable {
+		
+		final private MessagingService messagingService;
+		final private OutputTag<Object[]> outputTag;
 		
 		
 		@Override
-		public List<int[]> add(
-				Tuple3<LocalDateTime, Point, ClusterCenter> tuple,
-				List<int[]> acc) {
-			Point dp = tuple.f1;
-			ClusterCenter cluster = tuple.f2;
-			double[] dpPos = dp.getFields();
-			int[] entry = { (int) dpPos[0], (int) dpPos[1], cluster.getId() };
-			acc.add(entry);
-			return acc;
+		public void processElement(Object[] dataPoints, Context ctx, Collector<Object[]> collector) throws Exception {
+			// emit data to regular output
+			collector.collect(dataPoints);
+			
+			// send processed data to queue
+			messagingService.send(MessagingService.CLUSTER_DATAPOINT, dataPoints);
+			
+			// emit data to side output
+			ctx.output(outputTag, dataPoints);
+			
 		}
+	}
+	
+	public static class SerializationSchemaImpl implements SerializationSchema<Object[]>, Serializable {
+		
+		ObjectMapper mapper = new ObjectMapper();
 		
 		
 		@Override
-		public Object[] getResult(List<int[]> integers) {
-			return integers.toArray();
+		public byte[] serialize(Object[] objects) {
+			try {
+				return mapper.writeValueAsBytes(objects);
+			} catch (JsonProcessingException e) {
+//							log.error("Could not serialize data: " + e.getMessage());
+				return null;
+			}
 		}
-		
-		
-		@Override
-		public List<int[]> merge(List<int[]> acc1, List<int[]> acc2) {
-			acc1.addAll(acc2);
-			return acc1;
-		}
-	};
+	}
 }
