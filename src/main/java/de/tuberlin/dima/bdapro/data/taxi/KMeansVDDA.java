@@ -132,6 +132,7 @@ public class KMeansVDDA extends StreamProcessor{
                                 int fieldCounter = 0;
 
                                 for (int j = 0; j < c.getFields().length; j++) {
+                                    calcNewCentroid[j] = calcNewCentroid[j] / total;
                                     if (calcNewCentroid[j] == c.getFields()[j]) {
                                         fieldCounter++;
                                     }
