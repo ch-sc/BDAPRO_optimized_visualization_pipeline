@@ -38,7 +38,7 @@ public class MessagingService {
 	public void produceRandomMessages() {
 		TwoDimensionalPlotSto plot2d = new TwoDimensionalPlotSto();
 		plot2d.setData(new int[100][100]);
-		randomDataGrid(plot2d);
+		createDataGrid(plot2d);
 		
 		Object[] payload = DataTransformer.gridToCoordinates(plot2d.getData());
 		
@@ -50,11 +50,11 @@ public class MessagingService {
 		MessageProperties props = new MessageProperties();
 		props.setContentType(MediaType.TEXT_PLAIN_VALUE);
 		
-		rabbitTemplate.convertAndSend(EXCHANGE, ROUTING_KEY_BASE, payload);
+		rabbitTemplate.convertAndSend(EXCHANGE, ROUTING_KEY, payload);
 	}
 	
 	
-	private void randomDataGrid(TwoDimensionalPlotSto plot) {
+	private void createDataGrid(TwoDimensionalPlotSto plot) {
 		int[][] data = plot.getData();
 		int[] row;
 		for (int r = 0; r < data.length; r++) {

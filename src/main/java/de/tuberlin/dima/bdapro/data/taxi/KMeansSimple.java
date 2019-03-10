@@ -315,6 +315,8 @@ public class KMeansSimple extends StreamProcessor {
 	
 	private static class ExtractAscendingTimestamp extends AscendingTimestampExtractor<Tuple3<LocalDateTime, Double, Double>> {
 
+    private static class ExtractAscendingTimestamp extends AscendingTimestampExtractor<Tuple3<LocalDateTime, Double, Double>> {
+
         long takeTime = System.currentTimeMillis();
         @Override
         public long extractAscendingTimestamp(Tuple3<LocalDateTime, Double, Double> localDateTimeDoubleDoubleTuple3) {

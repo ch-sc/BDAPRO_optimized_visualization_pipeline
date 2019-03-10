@@ -16,11 +16,12 @@ public abstract class StreamProcessor {
     
     protected final StreamExecutionEnvironment env;
     
-    public abstract DataStream<Tuple3<LocalDateTime,Point, ClusterCenter>> cluster(int xBound, int yBound, int k, int maxIter, Time window, Time slide);
-
-    public abstract DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> scatterPlot(int x, int y, Time window, Time slide);
-    
     public void run() throws Exception {
         this.env.execute();
     }
+
+    public abstract DataStream<Tuple3<LocalDateTime,Point, ClusterCenter>> cluster(int xBound, int yBound, int k, int maxIter, Time window, Time slide);
+
+    public abstract DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> scatterPlot(int x, int y, Time window, Time slide);
+
 }
