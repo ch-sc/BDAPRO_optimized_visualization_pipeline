@@ -27,6 +27,7 @@ public class AcmeControllerAdvice extends ResponseEntityExceptionHandler {
 	ResponseEntity<?> handleControllerException(HttpServletRequest request, Throwable ex) {
 		final CustomError.CustomErrorBuilder builder = CustomError.builder()
 				.error(ExceptionUtils.getMessage(ex))
+				.rootMessage(ExceptionUtils.getRootCauseMessage(ex))
 				.timestamp(OffsetDateTime.now());
 		
 		int status = getStatus(request).value();

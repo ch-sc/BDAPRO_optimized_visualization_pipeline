@@ -311,9 +311,6 @@ public class KMeansSimple extends StreamProcessor {
 
         return points;
     }
-	
-	
-	private static class ExtractAscendingTimestamp extends AscendingTimestampExtractor<Tuple3<LocalDateTime, Double, Double>> {
 
     private static class ExtractAscendingTimestamp extends AscendingTimestampExtractor<Tuple3<LocalDateTime, Double, Double>> {
 

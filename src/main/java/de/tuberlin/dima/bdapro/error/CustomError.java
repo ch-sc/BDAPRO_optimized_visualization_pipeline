@@ -11,6 +11,7 @@ public class CustomError {
 	
 	private int status;
 	private String error;
+	private String rootMessage;
 	private OffsetDateTime timestamp;
 	private String uri;
 	private String trace;

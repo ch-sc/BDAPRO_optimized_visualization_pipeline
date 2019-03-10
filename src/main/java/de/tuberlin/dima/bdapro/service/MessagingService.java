@@ -23,7 +23,7 @@ public class MessagingService {
 	
 	private static final String EXCHANGE = "BDAPRO";
 	private static final String ROUTING_KEY_BASE = "plot.2d";
-	static final String CLUSTER_DATAPOINT = "CLUSTER_DATAPOINT";
+	static final String CLUSTER_DATAPOINTS = "CLUSTER_DATAPOINTS";
 	
 	Random random = new Random(101);
 	
@@ -50,7 +50,7 @@ public class MessagingService {
 		MessageProperties props = new MessageProperties();
 		props.setContentType(MediaType.TEXT_PLAIN_VALUE);
 		
-		rabbitTemplate.convertAndSend(EXCHANGE, ROUTING_KEY, payload);
+		rabbitTemplate.convertAndSend(EXCHANGE, ROUTING_KEY_BASE, payload);
 	}
 	
 	

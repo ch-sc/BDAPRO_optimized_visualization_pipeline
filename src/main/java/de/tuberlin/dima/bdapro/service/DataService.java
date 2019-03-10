@@ -34,8 +34,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-
 @Service
 @Slf4j
 public class DataService {
@@ -95,14 +93,12 @@ public class DataService {
 		DataStream<Tuple3<LocalDateTime, Point, ClusterCenter>> clusterStream =
 				streamProcessor.cluster(x, y, k, maxIter, window, slide);
 		
-		RMQSink<Object[]> sink = getSink();
-		
 		DataStreamSink dataStreamSink = clusterStream
 				.keyBy(0)
 				.windowAll(TumblingEventTimeWindows.of(window))
 //				.countWindow(1000)
 				.aggregate(preAggregate)
-				.addSink(sink);
+				.addSink(sink());
 //				.process(new SideOutProcess(messagingService, outputTag));
 		
 		try {
@@ -115,10 +111,10 @@ public class DataService {
 	}
 	
 	
-	private RMQSink<Object[]> getSink() {
+	private RMQSink<Object[]> sink() {
 		final RMQConnectionConfig connectionConfig = new RMQConnectionConfig.Builder()
 				.setHost("localhost")
-				.setVirtualHost("MyRabbit")
+				.setVirtualHost("/")
 				.setPort(5672)
 				.setUserName("user")
 				.setPassword("password")
@@ -126,7 +122,7 @@ public class DataService {
 		
 		return new RMQSink<>(
 				connectionConfig,            // config for the RabbitMQ connection
-				"BDAPRO",                    // name of the RabbitMQ queue to send messages to
+				"BDAPRO2",                    // name of the RabbitMQ queue to send messages to
 				new SerializationSchemaImpl()
 		);
 	}
@@ -228,7 +224,7 @@ public class DataService {
 			collector.collect(dataPoints);
 			
 			// send processed data to queue
-			messagingService.send(MessagingService.CLUSTER_DATAPOINT, dataPoints);
+			messagingService.send(MessagingService.CLUSTER_DATAPOINTS, dataPoints);
 			
 			// emit data to side output
 			ctx.output(outputTag, dataPoints);
