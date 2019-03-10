@@ -19,6 +19,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
 import org.apache.flink.streaming.api.functions.windowing.WindowFunction;
 import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
@@ -95,12 +96,21 @@ public class StreamDataProcessor extends StreamProcessor {
 
         //apply simple stream transformation
         DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> points = pDataStream
-                .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple3<LocalDateTime, Double, Double>>() {
+                .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple3<LocalDateTime,Double,Double>>() {
+                    @Override
+                    public long extractAscendingTimestamp(Tuple3<LocalDateTime,Double, Double> event) {
+                        return Long.valueOf(event.f0.getSecond()+event.f0.getMinute()*60+event.f0.getHour()*60*60+event.f0.getDayOfYear()*60*60*24+event.f0.getYear()*60*60*24*365);
+                    }
+                })
+                /*.assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple3<LocalDateTime, Double, Double>>() {
                     @Override
                     public long extractAscendingTimestamp(Tuple3<LocalDateTime,Double, Double> event) {
                         return Long.valueOf(event.f0.getSecond()+event.f0.getMinute()+event.f0.getHour()+event.f0.getDayOfYear()+event.f0.getYear());
                     }
-                }).keyBy(0).window(SlidingEventTimeWindows.of(window,slide))
+                })*/
+                /*.assignTimestampsAndWatermarks(new ExtractAscendingTimestamp())*/
+                .keyBy(0)
+                .window(TumblingEventTimeWindows.of(window))
                 .apply(new WindowFunction<Tuple3<LocalDateTime, Double, Double>, Tuple4<LocalDateTime, Double, Point, Integer>, Tuple, TimeWindow>()  {
 
 
@@ -130,6 +140,15 @@ public class StreamDataProcessor extends StreamProcessor {
         log.info("Time for Streamprocessing " + timer.getTime() + "ms");
 
         return points;
+    }
+
+    private static class ExtractAscendingTimestamp extends AscendingTimestampExtractor<Tuple3<LocalDateTime, Double, Double>> {
+
+        long takeTime = System.currentTimeMillis();
+        @Override
+        public long extractAscendingTimestamp(Tuple3<LocalDateTime, Double, Double> localDateTimeDoubleDoubleTuple3) {
+            return takeTime++;
+        }
     }
 
 }

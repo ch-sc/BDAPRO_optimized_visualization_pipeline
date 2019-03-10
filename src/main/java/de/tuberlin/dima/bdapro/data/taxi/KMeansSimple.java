@@ -131,6 +131,7 @@ public class KMeansSimple extends StreamProcessor {
                                 int fieldCounter = 0;
 
                                 for (int j = 0; j < c.getFields().length; j++) {
+                                    calcNewCentroid[j] = calcNewCentroid[j] / total;
                                     if (calcNewCentroid[j] == c.getFields()[j]) {
                                         fieldCounter++;
                                     }
@@ -201,12 +202,11 @@ public class KMeansSimple extends StreamProcessor {
 
         //clusters.writeAsCsv("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/VDDA/count/yellow_tripdata_2017-12/1/");
 
-        System.out.println("This is the job graph");
-        System.out.println(env.getExecutionPlan());
-        System.out.println("it ends here");
+        //Generates json to generate an execution graph from
+        //System.out.println(env.getExecutionPlan());
 
-        clusterCenters.writeAsCsv("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/Simple/yellow_tripdata_2017-12/onlyForJobGraph/cluster/");
-        count.writeAsCsv("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/Simple/yellow_tripdata_2017-12/onlyForJobGraph/count/");
+        //clusterCenters.writeAsCsv("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/VDDA/yellow_tripdata_2017-12/test/2/cluster/");
+        //count.writeAsCsv("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/VDDA/yellow_tripdata_2017-12/test/2/count/");
 
         try {
             env.execute("Streaming Iteration Example");
@@ -273,13 +273,19 @@ public class KMeansSimple extends StreamProcessor {
 
         //apply simple stream transformation
         DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> points = pDataStream
+                .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple3<LocalDateTime,Double,Double>>() {
+                    @Override
+                    public long extractAscendingTimestamp(Tuple3<LocalDateTime,Double, Double> event) {
+                        return Long.valueOf(event.f0.getSecond()+event.f0.getMinute()*60+event.f0.getHour()*60*60+event.f0.getDayOfYear()*60*60*24+event.f0.getYear()*60*60*24*365);
+                    }
+                })
                 /*.assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple3<LocalDateTime, Double, Double>>() {
                     @Override
                     public long extractAscendingTimestamp(Tuple3<LocalDateTime,Double, Double> event) {
                         return Long.valueOf(event.f0.getSecond()+event.f0.getMinute()+event.f0.getHour()+event.f0.getDayOfYear()+event.f0.getYear());
                     }
                 })*/
-                .assignTimestampsAndWatermarks(new ExtractAscendingTimestamp())
+                /*.assignTimestampsAndWatermarks(new ExtractAscendingTimestamp())*/
                 .keyBy(0)
                 .window(TumblingEventTimeWindows.of(window))
                 .apply(new WindowFunction<Tuple3<LocalDateTime, Double, Double>, Tuple4<LocalDateTime, Double, Point, Integer>, Tuple, TimeWindow>()  {
