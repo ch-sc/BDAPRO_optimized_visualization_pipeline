@@ -9,11 +9,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.tuberlin.dima.bdapro.data.DataProcessor;
 import de.tuberlin.dima.bdapro.data.StreamProcessor;
+import de.tuberlin.dima.bdapro.error.BusinessException;
 import de.tuberlin.dima.bdapro.model.ClusterCenter;
+import de.tuberlin.dima.bdapro.model.ExecutionType;
 import de.tuberlin.dima.bdapro.model.Point;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.api.java.tuple.Tuple3;
@@ -60,10 +63,10 @@ public class DataService {
 	private StreamProcessor simpleStreamProcessor;
 	@Autowired
 	@Qualifier("data-processor.kMeansVDDA")
-	private StreamProcessor kMeansVDDA;
+	private StreamProcessor kMeansVDDAProcessor;
 	@Autowired
 	@Qualifier("data-processor.kMeans")
-	private StreamProcessor kMeans;
+	private StreamProcessor kMeansProcessor;
 	
 	
 	public int[][] scatterPlot(ExecutionType executionType, int x, int y) {
@@ -76,11 +79,6 @@ public class DataService {
 		return selectDataProcessor(executionType)
 				.scatterPlot();
 	}
-
-	public DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> streamingScatterPlot(int x, int y, Time window, Time slide) { return streamProcessor.scatterPlot(x,y, window, slide); }
-
-	public DataStream<Tuple3<LocalDateTime, Point, ClusterCenter>> cluster(int x, int y, int k, int maxIter, Time window, Time slide) { return streamProcessor.cluster(x,y, k, maxIter, window, slide); }
-
 	
 	
 	public void scatterPlotAsync(ExecutionType execType, int x, int y, Time window, Time slide) {
@@ -106,9 +104,13 @@ public class DataService {
 				.aggregate(preAggregate)
 				.addSink(sink);
 //				.process(new SideOutProcess(messagingService, outputTag));
-
 		
-//
+		try {
+			streamProcessor.run();
+		} catch (Exception e) {
+			throw new BusinessException("Flink job throw an error: " + ExceptionUtils.getMessage(e), e);
+		}
+
 //		DataStream<Object[]> sideOutputStream = mainDataStream.getSideOutput(outputTag);
 	}
 	
@@ -127,39 +129,7 @@ public class DataService {
 				"BDAPRO",                    // name of the RabbitMQ queue to send messages to
 				new SerializationSchemaImpl()
 		);
-		// serialization schema to turn Java objects to messages
 	}
-/*	private void sideOutputExample(DataStream<Tuple3<LocalDateTime, Point, ClusterCenter>> clusterStream) {
-		
-		final OutputTag<double[]> outputTag = new OutputTag<double[]>("side-output") {
-		};
-		
-		SingleOutputStreamOperator<Tuple3<LocalDateTime, Point, ClusterCenter>> mainDataStream = clusterStream
-				.process(
-						new ProcessFunction<Tuple3<LocalDateTime, Point, ClusterCenter>, Tuple3<LocalDateTime, Point, ClusterCenter>>() {
-							
-							@Override
-							public void processElement(
-									Tuple3<LocalDateTime, Point, ClusterCenter> tuple,
-									Context ctx,
-									Collector<Tuple3<LocalDateTime, Point, ClusterCenter>> out) throws Exception {
-								
-								// emit data to regular output
-								out.collect(tuple);
-								
-								
-								double[] clusterData = ArrayUtils.addAll(tuple.f2.getFields(), tuple.f2.getId());
-								double[] dataPoints = ArrayUtils.addAll(tuple.f1.getFields(), clusterData);
-								
-								// emit data to side output
-								ctx.output(outputTag, dataPoints);
-							}
-						});
-		
-		
-		// single side output
-		DataStream<double[]> sideOutputStream = mainDataStream.getSideOutput(outputTag);
-	}*/
 	
 	
 	private StreamProcessor selectStreamProcessor(ExecutionType execType) {
