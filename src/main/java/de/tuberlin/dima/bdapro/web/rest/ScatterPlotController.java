@@ -1,24 +1,14 @@
 package de.tuberlin.dima.bdapro.web.rest;
 
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import javax.servlet.http.HttpServletResponse;
-
 import de.tuberlin.dima.bdapro.data.StreamProcessor;
 import de.tuberlin.dima.bdapro.error.ErrorType;
 import de.tuberlin.dima.bdapro.error.ErrorTypeException;
-import de.tuberlin.dima.bdapro.model.ClusterCenter;
 import de.tuberlin.dima.bdapro.model.ExecutionType;
-import de.tuberlin.dima.bdapro.model.Point;
 import de.tuberlin.dima.bdapro.service.DataService;
 import de.tuberlin.dima.bdapro.service.MessagingService;
 import de.tuberlin.dima.bdapro.util.DataTransformer;
 import lombok.extern.log4j.Log4j2;
-import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.api.java.tuple.Tuple4;
-import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -73,17 +63,25 @@ public class ScatterPlotController {
 	}
 	
 	
-	@GetMapping(value = "/scatter/stream")
-	public void scatterPlot(@ModelAttribute("bounds") DimensionalityBounds bounds,
-			HttpServletResponse response) {
-		dataService.clusterAsync(ExecutionType.KMEANSVDDA, bounds.x, bounds.y, 5, 5, Time.milliseconds(100), Time.milliseconds(100));
+	@GetMapping(value = "/stream/cluster")
+	public void createClusterStreamAsync(@ModelAttribute("bounds") DimensionalityBounds bounds,
+			@RequestParam(value = "f", required = false, defaultValue = "KMEANSVDDA") ExecutionType executionType) {
+		dataService.clusterAsync(executionType, bounds.x, bounds.y, 5, 5, Time.hours(10),
+				Time.milliseconds(100));
 	}
 	
 	
+	@GetMapping(value = "/stream/scatter")
+	public void createScatterStreamAsync(@ModelAttribute("bounds") DimensionalityBounds bounds,
+			@RequestParam(value = "f", required = false, defaultValue = "VDDASTREAMING") ExecutionType executionType) {
+		dataService.scatterAsync(ExecutionType.KMEANSVDDA, bounds.x, bounds.y, Time.hours(10),
+				Time.milliseconds(100));
+	}
 	
-	@GetMapping(value = "/scatter/stream/start")
+	
+	@GetMapping(value = "/scatter/stream/random")
 	public void writeToQueue() {
-		messagingService.produceRandomMessages();
+		messagingService.sendRandom(1000);
 	}
 	
 	
@@ -108,4 +106,6 @@ public class ScatterPlotController {
 			return x == null && y == null;
 		}
 	}
+	
+	
 }

@@ -34,23 +34,29 @@ public class MessagingService {
 	}
 	
 	
-//	@Scheduled(fixedRate = 500)
-	public void produceRandomMessages() {
-		TwoDimensionalPlotSto plot2d = new TwoDimensionalPlotSto();
-		plot2d.setData(new int[100][100]);
-		createDataGrid(plot2d);
+	//	@Scheduled(fixedRate = 500)
+	public void sendRandom(int amount) {
 		
-		Object[] payload = DataTransformer.gridToCoordinates(plot2d.getData());
+		log.info("push " + amount + " random data messages to queue...");
 		
-		log.info("pushing data to queue...");
-		if (log.isDebugEnabled()) {
-			log.debug("message body: " + Arrays.deepToString(payload));
+		for (int i = 0; i < amount; i++) {
+			
+			TwoDimensionalPlotSto plot2d = new TwoDimensionalPlotSto();
+			plot2d.setData(new int[100][100]);
+			createDataGrid(plot2d);
+			
+			Object[] payload = DataTransformer.gridToCoordinates(plot2d.getData());
+			
+			if (log.isDebugEnabled()) {
+				log.debug("message body: " + Arrays.deepToString(payload));
+			}
+			
+			MessageProperties props = new MessageProperties();
+			props.setContentType(MediaType.TEXT_PLAIN_VALUE);
+			
+			rabbitTemplate.convertAndSend(EXCHANGE, ROUTING_KEY_BASE + ".random", payload);
+			
 		}
-		
-		MessageProperties props = new MessageProperties();
-		props.setContentType(MediaType.TEXT_PLAIN_VALUE);
-		
-		rabbitTemplate.convertAndSend(EXCHANGE, ROUTING_KEY_BASE, payload);
 	}
 	
 	

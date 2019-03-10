@@ -22,7 +22,6 @@ import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
@@ -37,9 +36,6 @@ import org.springframework.stereotype.Service;
 @Service
 @Slf4j
 public class DataService {
-	
-	@Autowired
-	private MessagingService messagingService;
 
 	final OutputTag<Object[]> outputTag = new OutputTag<Object[]>("side-output") {
 	};
@@ -79,7 +75,7 @@ public class DataService {
 	}
 
 	
-	public void scatterPlotAsync(ExecutionType execType, int x, int y, Time window, Time slide) {
+	public void scatterAsync(ExecutionType execType, int x, int y, Time window, Time slide) {
 		StreamProcessor streamProcessor = selectStreamProcessor(execType);
 
 		DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> scatterPlotStream =
@@ -93,13 +89,11 @@ public class DataService {
 		DataStream<Tuple3<LocalDateTime, Point, ClusterCenter>> clusterStream =
 				streamProcessor.cluster(x, y, k, maxIter, window, slide);
 		
-		DataStreamSink dataStreamSink = clusterStream
+		clusterStream
 				.keyBy(0)
 				.windowAll(TumblingEventTimeWindows.of(window))
-//				.countWindow(1000)
-				.aggregate(preAggregate)
-				.addSink(sink());
-//				.process(new SideOutProcess(messagingService, outputTag));
+				.aggregate(catchTuples)
+				.addSink(rabbitMqSink());
 
 		try {
 			streamProcessor.run();
@@ -111,7 +105,7 @@ public class DataService {
 	}
 	
 	
-	private RMQSink<Object[]> sink() {
+	private RMQSink<Object[]> rabbitMqSink() {
 		final RMQConnectionConfig connectionConfig = new RMQConnectionConfig.Builder()
 				.setHost("localhost")
 				.setVirtualHost("/")
@@ -176,7 +170,7 @@ public class DataService {
 	}
 
 
-	private AggregateFunction preAggregate =
+	private AggregateFunction catchTuples =
 			new AggregateFunction<Tuple3<LocalDateTime, Point, ClusterCenter>, List<int[]>, Object[]>() {
 				@Override
 				public List<int[]> createAccumulator() {
