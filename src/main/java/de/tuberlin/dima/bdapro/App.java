@@ -87,7 +87,7 @@ public class App {
 		StopWatch timer = new StopWatch();
 		timer.start();
 
-		DataStream<Tuple3<LocalDateTime, Point, ClusterCenter>> clusters = cluster.cluster(x,y,5,5, Time.hours(10), Time.hours(5));
+		DataStream<Tuple3<LocalDateTime, Point, ClusterCenter>> clusters = cluster.cluster(x,y,5,5, Time.hours(20), Time.hours(0));
 
 		timer.stop();
 		log.info("Time for total " + timer.getTime() + "ms");

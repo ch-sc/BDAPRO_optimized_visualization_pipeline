@@ -203,10 +203,11 @@ public class KMeansSimple extends StreamProcessor {
         //clusters.writeAsCsv("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/VDDA/count/yellow_tripdata_2017-12/1/");
 
         //Generates json to generate an execution graph from
+        //System.out.println("Job Execution graph");
         //System.out.println(env.getExecutionPlan());
 
-        //clusterCenters.writeAsCsv("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/VDDA/yellow_tripdata_2017-12/test/2/cluster/");
-        //count.writeAsCsv("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/VDDA/yellow_tripdata_2017-12/test/2/count/");
+        clusterCenters.writeAsCsv("data/out/Simple/yellow_tripdata_2017-12/jobgraph/2/cluster/");
+        count.writeAsCsv("data/out/Simple/yellow_tripdata_2017-12/jobgraph/2/count/");
 
         try {
             env.execute("Streaming Iteration Example");
@@ -239,7 +240,7 @@ public class KMeansSimple extends StreamProcessor {
         // execute the program
 
         //read input file
-        dataStream = env.readTextFile("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/yellow_tripdata_2017-12.csv");
+        dataStream = env.readTextFile("data/yellow_tripdata_2017-12.csv");
 
         //filter for the first two rows
         dataStream = dataStream.filter(new FilterFunction<String>() {
@@ -264,7 +265,9 @@ public class KMeansSimple extends StreamProcessor {
                         String[] helper3 = helper2.split(" ");
                         helper2 = helper3[0] + "T" + helper3[1];
                         LocalDateTime dateTime = LocalDateTime.parse(helper2);
-                        Tuple3<LocalDateTime, Double, Double> output = new Tuple3<>(dateTime, Double.valueOf(helper[7]), Double.valueOf(helper[8]));
+                        String x1 = helper[10].replaceAll(",", ".").replaceAll("^\"|\"$", "").replaceAll("^\"|\"$", "");
+                        String y1 = helper[13].replaceAll(",", ".").replaceAll("^\"|\"$", "").replaceAll("^\"|\"$", "");
+                        Tuple3<LocalDateTime, Double, Double> output = new Tuple3<>(dateTime, Double.valueOf(x1), Double.valueOf(y1));//date, fare amount, and tip amount
                         out.collect(output);
                     }
                 }
@@ -276,7 +279,13 @@ public class KMeansSimple extends StreamProcessor {
                 .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple3<LocalDateTime,Double,Double>>() {
                     @Override
                     public long extractAscendingTimestamp(Tuple3<LocalDateTime,Double, Double> event) {
-                        return Long.valueOf(event.f0.getSecond()+event.f0.getMinute()*60+event.f0.getHour()*60*60+event.f0.getDayOfYear()*60*60*24+event.f0.getYear()*60*60*24*365);
+                        long seconds = event.f0.getSecond()*1000L;
+                        long min = event.f0.getMinute()*60L*1000L;
+                        long hr = event.f0.getHour()*60L*60L*1000L;
+                        long day = event.f0.getDayOfYear()*60L*60L*24L*1000L;
+                        long year = event.f0.getYear()*60L*60L*24L*365L*1000L;
+
+                        return seconds+min+hr+day+year;
                     }
                 })
                 /*.assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple3<LocalDateTime, Double, Double>>() {
@@ -286,13 +295,12 @@ public class KMeansSimple extends StreamProcessor {
                     }
                 })*/
                 /*.assignTimestampsAndWatermarks(new ExtractAscendingTimestamp())*/
-                .keyBy(0)
-                .window(TumblingEventTimeWindows.of(window))
-                .apply(new WindowFunction<Tuple3<LocalDateTime, Double, Double>, Tuple4<LocalDateTime, Double, Point, Integer>, Tuple, TimeWindow>()  {
+                .windowAll(TumblingEventTimeWindows.of(window))
+                .apply(new AllWindowFunction<Tuple3<LocalDateTime, Double, Double>, Tuple4<LocalDateTime, Double, Point, Integer>, TimeWindow>()  {
 
 
                     @Override
-                    public void apply(Tuple tuple, TimeWindow timeWindow, Iterable<Tuple3<LocalDateTime, Double, Double>> iterable, Collector<Tuple4<LocalDateTime, Double, Point, Integer>> collector) throws Exception {
+                    public void apply(TimeWindow timeWindow, Iterable<Tuple3<LocalDateTime, Double, Double>> iterable, Collector<Tuple4<LocalDateTime, Double, Point, Integer>> collector) throws Exception {
 
                         for (Tuple3<LocalDateTime, Double, Double> v: iterable){
 
