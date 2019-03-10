@@ -30,12 +30,9 @@ import org.apache.flink.util.Collector;
 @Slf4j
 public class VDDAProcessor extends StreamProcessor {
 
-
-    private final StreamExecutionEnvironment env;
-
-
+    
     public VDDAProcessor(StreamExecutionEnvironment env) {
-        this.env = env;
+        super(env);
     }
 
     @Override

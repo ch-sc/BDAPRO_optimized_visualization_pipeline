@@ -16,6 +16,7 @@ import org.apache.flink.streaming.api.functions.windowing.AllWindowFunction;
 import org.apache.flink.streaming.api.functions.windowing.WindowFunction;
 import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.assigners.SlidingProcessingTimeWindows;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
@@ -32,10 +33,9 @@ import java.util.List;
 @Slf4j
 public class KMeansSimple extends StreamProcessor {
 
-    private final StreamExecutionEnvironment env;
 
     public KMeansSimple(StreamExecutionEnvironment env) {
-        this.env = env;
+		super(env);
     }
 
     /**
@@ -50,24 +50,21 @@ public class KMeansSimple extends StreamProcessor {
      */
 
     @Override
-    public DataStream<Tuple3<LocalDateTime, Point, ClusterCenter>> cluster(int xBound, int yBound, int k, int maxIter, Time window, Time slide) {
+    public DataStream<Tuple3<LocalDateTime,Point, ClusterCenter>> cluster(int xBound, int yBound, int k, int maxIter, Time window, Time slide) {
 
         StopWatch timer = new StopWatch();
         timer.start();
 
-        env.setStreamTimeCharacteristic(TimeCharacteristic.ProcessingTime);
+        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
         DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> dataPoints = scatterPlot(xBound, yBound, window, slide);
 
         //initialize the first points as cluster centers
-        //initialize the first points as cluster centers
         DataStream<Tuple3<LocalDateTime, Point, ClusterCenter>> clusters = dataPoints
-                .keyBy(0).window(SlidingEventTimeWindows.of(window,slide))
-                .apply(new WindowFunction<Tuple4<LocalDateTime, Double, Point, Integer>, Tuple3<LocalDateTime, Point, ClusterCenter>, Tuple, TimeWindow>() {
-
-
+                .windowAll(TumblingEventTimeWindows.of(window))
+                .apply(new AllWindowFunction<Tuple4<LocalDateTime, Double, Point, Integer>, Tuple3<LocalDateTime, Point, ClusterCenter>, TimeWindow>() {
                     @Override
-                    public void apply(Tuple tuple, TimeWindow timeWindow, Iterable<Tuple4<LocalDateTime, Double, Point, Integer>> iterable, Collector<Tuple3<LocalDateTime, Point, ClusterCenter>> collector) throws Exception {
+                    public void apply(TimeWindow timeWindow, Iterable<Tuple4<LocalDateTime, Double, Point, Integer>> iterable, Collector<Tuple3<LocalDateTime, Point, ClusterCenter>> collector) throws Exception {
 
                         int counter = 0;
                         List<ClusterCenter> clusterCenters = new ArrayList<>();
@@ -82,13 +79,12 @@ public class KMeansSimple extends StreamProcessor {
                             }
                         }
 
-                        counter = 0;
                         Tuple3<LocalDateTime,Point, ClusterCenter> helper = new Tuple3<>();
                         List<Tuple3<LocalDateTime,Point, ClusterCenter>> finalList = new ArrayList<>();
 
 
                         //run kmeans as long as max iter not reached or convergence
-                        while (counter < maxIter) {
+                        for (int iter = 0; iter < maxIter; iter++) {
 
                             List<Tuple3<LocalDateTime,Point, ClusterCenter>> pointsAndClusters = new ArrayList<>();
 
@@ -120,11 +116,12 @@ public class KMeansSimple extends StreamProcessor {
 
                                 for (Tuple3<LocalDateTime,Point, ClusterCenter> t : pointsAndClusters) {
 
-                                    if (t.f1 == c) {
+                                    if (t.f2 == c) {
 
                                         for (int i = 0; i < c.getFields().length; i++) {
 
                                             calcNewCentroid[i] += t.f1.getFields()[i];
+
                                         }
                                         total++;
                                     }
@@ -133,7 +130,6 @@ public class KMeansSimple extends StreamProcessor {
                                 int fieldCounter = 0;
 
                                 for (int j = 0; j < c.getFields().length; j++) {
-                                    calcNewCentroid[j] = calcNewCentroid[j] / total;
                                     if (calcNewCentroid[j] == c.getFields()[j]) {
                                         fieldCounter++;
                                     }
@@ -152,7 +148,6 @@ public class KMeansSimple extends StreamProcessor {
 
                                 break;
                             }
-                            counter++;
                         }
 
                         //collect list of points with associated cluster centers
@@ -168,44 +163,55 @@ public class KMeansSimple extends StreamProcessor {
         //System.out.println(env.getExecutionPlan());
         timer.stop();
 
-        DataStream<Tuple2<ClusterCenter, Integer>> clusterCenters = clusters.keyBy(0).window(SlidingEventTimeWindows.of(window,slide)).apply(new WindowFunction<Tuple3<LocalDateTime, Point, ClusterCenter>, Tuple2<ClusterCenter, Integer>, Tuple, TimeWindow>() {
+        DataStream<Tuple2<ClusterCenter, Integer>> clusterCenters = clusters/*.map(new MapFunction<Tuple3<LocalDateTime, Point, ClusterCenter>, Tuple2<ClusterCenter, Integer>>() {
             @Override
-            public void apply(Tuple tuple, TimeWindow timeWindow, Iterable<Tuple3<LocalDateTime, Point, ClusterCenter>> iterable, Collector<Tuple2<ClusterCenter, Integer>> collector) throws Exception {
-                HashMap<ClusterCenter, Integer> pointsInClusters = new HashMap<>();
-
-                for (Tuple3<LocalDateTime, Point, ClusterCenter> c: iterable){
-                    //check if value already there, if yes, only add count
-                    pointsInClusters.computeIfPresent(c.f2, (k, value) -> value+1);
-                    //only save the first incoming point per window
-                    pointsInClusters.putIfAbsent(c.f2, 1);
-                }
-
-                pointsInClusters.entrySet().stream()
-                        .forEach(e -> {
-                            collector.collect(new Tuple2<ClusterCenter, Integer>(e.getKey(), e.getValue()));
-                        });
+            public Tuple2<ClusterCenter, Integer> map(Tuple3<LocalDateTime, Point, ClusterCenter> input) throws Exception {
+                return new Tuple2<>(input.f2, 1);
             }
-        });
+        });*/
+                .windowAll(TumblingEventTimeWindows.of(window)).apply(new AllWindowFunction<Tuple3<LocalDateTime, Point, ClusterCenter>, Tuple2<ClusterCenter, Integer>, TimeWindow>() {
+                    @Override
+                    public void apply(TimeWindow timeWindow, Iterable<Tuple3<LocalDateTime, Point, ClusterCenter>> iterable, Collector<Tuple2<ClusterCenter, Integer>> collector) throws Exception {
+
+                        HashMap<Integer, Tuple2<ClusterCenter, Integer>> pointsInClusters = new HashMap<>();
+
+                        for (Tuple3<LocalDateTime, Point, ClusterCenter> c: iterable){
+                            //check if value already there, if yes, only add count
+                            pointsInClusters.computeIfPresent(c.f2.getId(), (k, value) -> new Tuple2<>(value.f0, value.f1+1));
+                            //only save the first incoming point per window
+                            pointsInClusters.putIfAbsent(c.f2.getId(), new Tuple2<>(c.f2, 1));
+                        }
+
+                        pointsInClusters.entrySet().stream()
+                                .forEach(e -> {
+                                    collector.collect(new Tuple2<>(e.getValue().f0, e.getValue().f1));
+                                });
+                    }
+                });
 
         DataStream<Tuple1<Integer>> count = clusters.map(new MapFunction<Tuple3<LocalDateTime, Point, ClusterCenter>, Tuple1<Integer>>() {
             @Override
             public Tuple1<Integer> map(Tuple3<LocalDateTime, Point, ClusterCenter> tuple) throws Exception {
                 return new Tuple1<>(1);
             }
-        }).windowAll(SlidingEventTimeWindows.of(window,slide)).sum(0);
+        }).windowAll(TumblingEventTimeWindows.of(window)).sum(0);
 
+        log.info("Time for KMeans plain " + timer.getTime() + "ms");
 
-        clusterCenters.writeAsCsv("data/out/VDDA/cluster/yellow_tripdata_2017-12/1/");
-        count.writeAsCsv("data/out/VDDA/count/yellow_tripdata_2017-12/1/");
+        //clusters.writeAsCsv("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/VDDA/count/yellow_tripdata_2017-12/1/");
+
+        System.out.println("This is the job graph");
+        System.out.println(env.getExecutionPlan());
+        System.out.println("it ends here");
+
+        clusterCenters.writeAsCsv("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/Simple/yellow_tripdata_2017-12/onlyForJobGraph/cluster/");
+        count.writeAsCsv("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/Simple/yellow_tripdata_2017-12/onlyForJobGraph/count/");
 
         try {
             env.execute("Streaming Iteration Example");
         } catch (Exception e) {
             throw new BusinessException(e.getMessage(), e);
         }
-
-
-        log.info("Time for simple KMeans " + timer.getTime() + "ms");
 
         return clusters;
 
@@ -266,12 +272,15 @@ public class KMeansSimple extends StreamProcessor {
 
         //apply simple stream transformation
         DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> points = pDataStream
-                .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple3<LocalDateTime, Double, Double>>() {
+                /*.assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple3<LocalDateTime, Double, Double>>() {
                     @Override
                     public long extractAscendingTimestamp(Tuple3<LocalDateTime,Double, Double> event) {
                         return Long.valueOf(event.f0.getSecond()+event.f0.getMinute()+event.f0.getHour()+event.f0.getDayOfYear()+event.f0.getYear());
                     }
-                }).keyBy(0).window(SlidingEventTimeWindows.of(window,slide))
+                })*/
+                .assignTimestampsAndWatermarks(new ExtractAscendingTimestamp())
+                .keyBy(0)
+                .window(TumblingEventTimeWindows.of(window))
                 .apply(new WindowFunction<Tuple3<LocalDateTime, Double, Double>, Tuple4<LocalDateTime, Double, Point, Integer>, Tuple, TimeWindow>()  {
 
 
@@ -301,6 +310,16 @@ public class KMeansSimple extends StreamProcessor {
         log.info("Time for Streamprocessing " + timer.getTime() + "ms");
 
         return points;
+    }
+	
+	
+	private static class ExtractAscendingTimestamp extends AscendingTimestampExtractor<Tuple3<LocalDateTime, Double, Double>> {
+
+        long takeTime = System.currentTimeMillis();
+        @Override
+        public long extractAscendingTimestamp(Tuple3<LocalDateTime, Double, Double> localDateTimeDoubleDoubleTuple3) {
+            return takeTime++;
+        }
     }
 
 }

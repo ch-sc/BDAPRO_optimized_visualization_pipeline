@@ -29,11 +29,9 @@ import org.apache.flink.util.Collector;
 @Slf4j
 public class StreamDataProcessor extends StreamProcessor {
 
-    private final StreamExecutionEnvironment env;
-
 
     public StreamDataProcessor(StreamExecutionEnvironment env) {
-        this.env = env;
+        super(env);
     }
 
     @Override
@@ -86,7 +84,7 @@ public class StreamDataProcessor extends StreamProcessor {
                         String[] helper3 = helper2.split(" ");
                         helper2 = helper3[0] + "T" + helper3[1];
                         LocalDateTime dateTime = LocalDateTime.parse(helper2);
-                        Tuple3<LocalDateTime, Double, Double> output = new Tuple3<>(dateTime, Double.valueOf(helper[7]), Double.valueOf(helper[8])); // pickup date, longitude, latitude
+                        Tuple3<LocalDateTime, Double, Double> output = new Tuple3<>(dateTime, Double.valueOf(helper[7]), Double.valueOf(helper[8]));
                         out.collect(output);
                     }
                 }

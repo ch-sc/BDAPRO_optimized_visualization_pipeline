@@ -13,18 +13,14 @@ import de.tuberlin.dima.bdapro.model.ClusterCenter;
 import de.tuberlin.dima.bdapro.model.ExecutionType;
 import de.tuberlin.dima.bdapro.model.Point;
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.serialization.SerializationSchema;
-import org.apache.flink.api.common.serialization.SimpleStringSchema;
-import org.apache.flink.api.java.operators.DataSink;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
-import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
@@ -57,7 +53,7 @@ public class DataService {
 	private DataProcessor flinkDataProcessor;
 	@Autowired
 	@Qualifier("data-processor.m4Stream")
-	private StreamProcessor m4StreamProcessor;
+	private StreamProcessor vddaStreamProcessor;
 	@Autowired
 	@Qualifier("data-processor.simpleStream")
 	private StreamProcessor simpleStreamProcessor;
@@ -70,12 +66,14 @@ public class DataService {
 	
 	
 	public int[][] scatterPlot(ExecutionType executionType, int x, int y) {
-		return selectDataProcessor(executionType).scatterPlot(x, y);
+		return selectDataProcessor(executionType)
+				.scatterPlot(x, y);
 	}
 	
 	
 	public int[][] scatterPlot(ExecutionType executionType) {
-		return selectDataProcessor(executionType).scatterPlot();
+		return selectDataProcessor(executionType)
+				.scatterPlot();
 	}
 	
 	
@@ -103,6 +101,7 @@ public class DataService {
 				.addSink(sink);
 //				.process(new SideOutProcess(messagingService, outputTag));
 
+		
 //
 //		DataStream<Object[]> sideOutputStream = mainDataStream.getSideOutput(outputTag);
 	}
@@ -172,7 +171,7 @@ public class DataService {
 				streamProcessor = simpleStreamProcessor;
 				break;
 			case VDDASTREAMING:
-				streamProcessor = m4StreamProcessor;
+				streamProcessor = vddaStreamProcessor;
 				break;
 			case KMEANSVDDA:
 				streamProcessor = kMeansVDDAProcessor;
