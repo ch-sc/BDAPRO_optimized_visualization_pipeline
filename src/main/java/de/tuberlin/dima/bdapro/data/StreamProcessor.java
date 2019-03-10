@@ -13,9 +13,9 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 
 @AllArgsConstructor
 public abstract class StreamProcessor {
-    
+
     protected final StreamExecutionEnvironment env;
-    
+
     public void run() throws Exception {
         this.env.execute();
     }

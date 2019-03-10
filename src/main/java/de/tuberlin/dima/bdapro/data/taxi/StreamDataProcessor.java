@@ -17,8 +17,10 @@ import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
+import org.apache.flink.streaming.api.functions.windowing.AllWindowFunction;
 import org.apache.flink.streaming.api.functions.windowing.WindowFunction;
 import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
@@ -84,7 +86,9 @@ public class StreamDataProcessor extends StreamProcessor {
                         String[] helper3 = helper2.split(" ");
                         helper2 = helper3[0] + "T" + helper3[1];
                         LocalDateTime dateTime = LocalDateTime.parse(helper2);
-                        Tuple3<LocalDateTime, Double, Double> output = new Tuple3<>(dateTime, Double.valueOf(helper[7]), Double.valueOf(helper[8]));
+                        String x1 = helper[10].replaceAll(",", ".").replaceAll("^\"|\"$", "").replaceAll("^\"|\"$", "");
+                        String y1 = helper[13].replaceAll(",", ".").replaceAll("^\"|\"$", "").replaceAll("^\"|\"$", "");
+                        Tuple3<LocalDateTime, Double, Double> output = new Tuple3<>(dateTime, Double.valueOf(x1), Double.valueOf(y1));//date, fare amount, and tip amount
                         out.collect(output);
                     }
                 }
@@ -93,17 +97,31 @@ public class StreamDataProcessor extends StreamProcessor {
 
         //apply simple stream transformation
         DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> points = pDataStream
-                .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple3<LocalDateTime, Double, Double>>() {
+                .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple3<LocalDateTime,Double,Double>>() {
+                    @Override
+                    public long extractAscendingTimestamp(Tuple3<LocalDateTime,Double, Double> event) {
+                        long seconds = event.f0.getSecond()*1000L;
+                        long min = event.f0.getMinute()*60L*1000L;
+                        long hr = event.f0.getHour()*60L*60L*1000L;
+                        long day = event.f0.getDayOfYear()*60L*60L*24L*1000L;
+                        long year = event.f0.getYear()*60L*60L*24L*365L*1000L;
+
+                        return seconds+min+hr+day+year;
+                    }
+                })
+                /*.assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple3<LocalDateTime, Double, Double>>() {
                     @Override
                     public long extractAscendingTimestamp(Tuple3<LocalDateTime,Double, Double> event) {
                         return Long.valueOf(event.f0.getSecond()+event.f0.getMinute()+event.f0.getHour()+event.f0.getDayOfYear()+event.f0.getYear());
                     }
-                }).keyBy(0).window(SlidingEventTimeWindows.of(window,slide))
-                .apply(new WindowFunction<Tuple3<LocalDateTime, Double, Double>, Tuple4<LocalDateTime, Double, Point, Integer>, Tuple, TimeWindow>()  {
+                })*/
+                /*.assignTimestampsAndWatermarks(new ExtractAscendingTimestamp())*/
+                .windowAll(TumblingEventTimeWindows.of(window))
+                .apply(new AllWindowFunction<Tuple3<LocalDateTime, Double, Double>, Tuple4<LocalDateTime, Double, Point, Integer>, TimeWindow>()  {
 
 
                     @Override
-                    public void apply(Tuple tuple, TimeWindow timeWindow, Iterable<Tuple3<LocalDateTime, Double, Double>> iterable, Collector<Tuple4<LocalDateTime, Double, Point, Integer>> collector) throws Exception {
+                    public void apply(TimeWindow timeWindow, Iterable<Tuple3<LocalDateTime, Double, Double>> iterable, Collector<Tuple4<LocalDateTime, Double, Point, Integer>> collector) throws Exception {
 
                         for (Tuple3<LocalDateTime, Double, Double> v: iterable){
 
@@ -128,6 +146,15 @@ public class StreamDataProcessor extends StreamProcessor {
         log.info("Time for Streamprocessing " + timer.getTime() + "ms");
 
         return points;
+    }
+
+    private static class ExtractAscendingTimestamp extends AscendingTimestampExtractor<Tuple3<LocalDateTime, Double, Double>> {
+
+        long takeTime = System.currentTimeMillis();
+        @Override
+        public long extractAscendingTimestamp(Tuple3<LocalDateTime, Double, Double> localDateTimeDoubleDoubleTuple3) {
+            return takeTime++;
+        }
     }
 
 }

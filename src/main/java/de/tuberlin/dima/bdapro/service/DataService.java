@@ -40,10 +40,10 @@ public class DataService {
 	
 	@Autowired
 	private MessagingService messagingService;
-	
+
 	final OutputTag<Object[]> outputTag = new OutputTag<Object[]>("side-output") {
 	};
-	
+
 	@Autowired
 	@Qualifier("data-processor.sequential")
 	private DataProcessor sequentialDataProcessor;
@@ -65,23 +65,23 @@ public class DataService {
 	@Autowired
 	@Qualifier("data-processor.kMeans")
 	private StreamProcessor kMeansProcessor;
-	
-	
+
+
 	public int[][] scatterPlot(ExecutionType executionType, int x, int y) {
 		return selectDataProcessor(executionType)
 				.scatterPlot(x, y);
 	}
-	
-	
+
+
 	public int[][] scatterPlot(ExecutionType executionType) {
 		return selectDataProcessor(executionType)
 				.scatterPlot();
 	}
-	
+
 	
 	public void scatterPlotAsync(ExecutionType execType, int x, int y, Time window, Time slide) {
 		StreamProcessor streamProcessor = selectStreamProcessor(execType);
-		
+
 		DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> scatterPlotStream =
 				streamProcessor.scatterPlot(x, y, window, slide);
 	}
@@ -89,7 +89,7 @@ public class DataService {
 	
 	public void clusterAsync(ExecutionType execType, int x, int y, int k, int maxIter, Time window, Time slide) {
 		StreamProcessor streamProcessor = selectStreamProcessor(execType);
-		
+
 		DataStream<Tuple3<LocalDateTime, Point, ClusterCenter>> clusterStream =
 				streamProcessor.cluster(x, y, k, maxIter, window, slide);
 		
@@ -100,7 +100,7 @@ public class DataService {
 				.aggregate(preAggregate)
 				.addSink(sink());
 //				.process(new SideOutProcess(messagingService, outputTag));
-		
+
 		try {
 			streamProcessor.run();
 		} catch (Exception e) {
@@ -119,19 +119,19 @@ public class DataService {
 				.setUserName("user")
 				.setPassword("password")
 				.build();
-		
+
 		return new RMQSink<>(
 				connectionConfig,            // config for the RabbitMQ connection
 				"BDAPRO2",                    // name of the RabbitMQ queue to send messages to
 				new SerializationSchemaImpl()
 		);
 	}
-	
-	
+
+
 	private StreamProcessor selectStreamProcessor(ExecutionType execType) {
-		
+
 		StreamProcessor streamProcessor;
-		
+
 		switch (execType) {
 			default:
 			case SEQUENTIAL:
@@ -152,11 +152,11 @@ public class DataService {
 				streamProcessor = kMeansProcessor;
 				break;
 		}
-		
+
 		return streamProcessor;
 	}
-	
-	
+
+
 	private DataProcessor selectDataProcessor(ExecutionType execType) {
 		switch (execType) {
 			case SEQUENTIAL:
@@ -174,16 +174,16 @@ public class DataService {
 						"SEQUENTIAL and PARALLEL and FLINK execution environments are not supported for async clustering");
 		}
 	}
-	
-	
+
+
 	private AggregateFunction preAggregate =
 			new AggregateFunction<Tuple3<LocalDateTime, Point, ClusterCenter>, List<int[]>, Object[]>() {
 				@Override
 				public List<int[]> createAccumulator() {
 					return new ArrayList<>(1000);
 				}
-				
-				
+
+
 				@Override
 				public List<int[]> add(
 						Tuple3<LocalDateTime, Point, ClusterCenter> tuple,
@@ -195,48 +195,48 @@ public class DataService {
 					acc.add(entry);
 					return acc;
 				}
-				
-				
+
+
 				@Override
 				public Object[] getResult(List<int[]> integers) {
 					return integers.toArray();
 				}
-				
-				
+
+
 				@Override
 				public List<int[]> merge(List<int[]> acc1, List<int[]> acc2) {
 					acc1.addAll(acc2);
 					return acc1;
 				}
 			};
-	
-	
+
+
 	@AllArgsConstructor
 	public static class SideOutProcess extends ProcessFunction<Object[], Object[]> implements Serializable {
-		
+
 		final private MessagingService messagingService;
 		final private OutputTag<Object[]> outputTag;
-		
-		
+
+
 		@Override
 		public void processElement(Object[] dataPoints, Context ctx, Collector<Object[]> collector) throws Exception {
 			// emit data to regular output
 			collector.collect(dataPoints);
-			
+
 			// send processed data to queue
 			messagingService.send(MessagingService.CLUSTER_DATAPOINTS, dataPoints);
 			
 			// emit data to side output
 			ctx.output(outputTag, dataPoints);
-			
+
 		}
 	}
-	
+
 	public static class SerializationSchemaImpl implements SerializationSchema<Object[]>, Serializable {
-		
+
 		ObjectMapper mapper = new ObjectMapper();
-		
-		
+
+
 		@Override
 		public byte[] serialize(Object[] objects) {
 			try {
