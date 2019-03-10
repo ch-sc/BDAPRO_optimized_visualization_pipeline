@@ -10,7 +10,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.tuberlin.dima.bdapro.data.DataProcessor;
 import de.tuberlin.dima.bdapro.data.StreamProcessor;
 import de.tuberlin.dima.bdapro.model.ClusterCenter;
-import de.tuberlin.dima.bdapro.model.ExecutionType;
 import de.tuberlin.dima.bdapro.model.Point;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -36,6 +35,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+
 @Service
 @Slf4j
 public class DataService {
@@ -57,26 +58,31 @@ public class DataService {
 	private DataProcessor flinkDataProcessor;
 	@Autowired
 	@Qualifier("data-processor.m4Stream")
-	private StreamProcessor m4StreamProcessor;
+	private StreamProcessor streamProcessor;
 	@Autowired
 	@Qualifier("data-processor.simpleStream")
 	private StreamProcessor simpleStreamProcessor;
 	@Autowired
 	@Qualifier("data-processor.kMeansVDDA")
-	private StreamProcessor kMeansVDDAProcessor;
+	private StreamProcessor kMeansVDDA;
 	@Autowired
 	@Qualifier("data-processor.kMeans")
-	private StreamProcessor kMeansProcessor;
+	private StreamProcessor kMeans;
 	
 	
-	public int[][] scatterPlot(ExecutionType executionType, int x, int y) {
-		return selectDataProcessor(executionType).scatterPlot(x, y);
+	public int[][] scatterPlot(int x, int y) {
+		return sequentialDataProcessor.scatterPlot(x, y);
 	}
 	
 	
-	public int[][] scatterPlot(ExecutionType executionType) {
-		return selectDataProcessor(executionType).scatterPlot();
+	public int[][] scatterPlot() {
+		return sequentialDataProcessor.scatterPlot();
 	}
+
+	public DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> streamingScatterPlot(int x, int y, Time window, Time slide) { return streamProcessor.scatterPlot(x,y, window, slide); }
+
+	public DataStream<Tuple3<LocalDateTime, Point, ClusterCenter>> cluster(int x, int y, int k, int maxIter, Time window, Time slide) { return streamProcessor.cluster(x,y, k, maxIter, window, slide); }
+
 	
 	
 	public void scatterPlotAsync(ExecutionType execType, int x, int y, Time window, Time slide) {

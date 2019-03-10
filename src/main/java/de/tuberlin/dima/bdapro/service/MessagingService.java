@@ -6,7 +6,6 @@ import java.util.Random;
 import de.tuberlin.dima.bdapro.model.dto.TwoDimensionalPlotSto;
 import de.tuberlin.dima.bdapro.util.DataTransformer;
 import lombok.extern.log4j.Log4j2;
-import org.apache.flink.shaded.guava18.com.google.common.base.Strings;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,8 +21,7 @@ public class MessagingService {
 	private RabbitTemplate rabbitTemplate;
 	
 	private static final String EXCHANGE = "BDAPRO";
-	private static final String ROUTING_KEY_BASE = "plot.2d";
-	public static final String CLUSTER_DATAPOINT = "CLUSTER_DATAPOINT";
+	private static final String ROUTING_KEY = "plot.2d";
 	
 	Random random = new Random(101);
 	
@@ -38,7 +36,7 @@ public class MessagingService {
 	public void produceRandomMessages() {
 		TwoDimensionalPlotSto plot2d = new TwoDimensionalPlotSto();
 		plot2d.setData(new int[100][100]);
-		randomDataGrid(plot2d);
+		createDataGrid(plot2d);
 		
 		Object[] payload = DataTransformer.gridToCoordinates(plot2d.getData());
 		
@@ -50,11 +48,11 @@ public class MessagingService {
 		MessageProperties props = new MessageProperties();
 		props.setContentType(MediaType.TEXT_PLAIN_VALUE);
 		
-		rabbitTemplate.convertAndSend(EXCHANGE, ROUTING_KEY_BASE, payload);
+		rabbitTemplate.convertAndSend(EXCHANGE, ROUTING_KEY, payload);
 	}
 	
 	
-	private void randomDataGrid(TwoDimensionalPlotSto plot) {
+	private void createDataGrid(TwoDimensionalPlotSto plot) {
 		int[][] data = plot.getData();
 		int[] row;
 		for (int r = 0; r < data.length; r++) {
