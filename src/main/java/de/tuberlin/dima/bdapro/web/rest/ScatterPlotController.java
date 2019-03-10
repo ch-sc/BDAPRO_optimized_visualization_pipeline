@@ -10,6 +10,7 @@ import de.tuberlin.dima.bdapro.data.StreamProcessor;
 import de.tuberlin.dima.bdapro.error.ErrorType;
 import de.tuberlin.dima.bdapro.error.ErrorTypeException;
 import de.tuberlin.dima.bdapro.model.ClusterCenter;
+import de.tuberlin.dima.bdapro.model.ExecutionType;
 import de.tuberlin.dima.bdapro.model.Point;
 import de.tuberlin.dima.bdapro.service.DataService;
 import de.tuberlin.dima.bdapro.service.MessagingService;
@@ -18,6 +19,7 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.windowing.time.Time;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
@@ -63,38 +65,18 @@ public class ScatterPlotController {
 	@GetMapping(value = "/scatter", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
 	public Object[] scatterPlot(@ModelAttribute("bounds") DimensionalityBounds bounds) throws ErrorTypeException {
 		if (bounds.isUnbound()) {
-			return dataService.scatterPlot();
+			return dataService.scatterPlot(ExecutionType.SEQUENTIAL);
 		}
 		
-		final int[][] dataGrid = dataService.scatterPlot(bounds.x, bounds.y);
+		final int[][] dataGrid = dataService.scatterPlot(ExecutionType.SEQUENTIAL,bounds.x, bounds.y);
 		return DataTransformer.gridToCoordinates(dataGrid);
 	}
 	
 	
 	@GetMapping(value = "/scatter/stream")
-	public Object[] scatterPlot(@ModelAttribute("bounds") DimensionalityBounds bounds,
+	public void scatterPlot(@ModelAttribute("bounds") DimensionalityBounds bounds,
 			HttpServletResponse response) {
-		
-		DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> points;
-		/*
-		try (OutputStream out = response.getOutputStream()) {
-			points = dataService.streamingScatterPlot(bounds.x, bounds.y);
-			points.writeToSocket("visualisation-pipeline-service", 8082, new SerializationSchema<Point>() {
-				@Override
-				public byte[] serialize(DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> points) {
-					return ByteBuffer.allocate(4).putDouble(point.getFields()[0]).array();
-				}
-			});
-		} catch (IOException e) {
-			throw new RuntimeException(ExceptionUtils.getMessage(e), e);
-		}
-*/
-		List<Double> list = new ArrayList<Double>();
-		list.add(5.9);
-		list.add(6.0);
-		
-		return list.toArray();
-		
+		dataService.clusterAsync(ExecutionType.KMEANSVDDA, bounds.x, bounds.y, 5, 5, Time.milliseconds(100), Time.milliseconds(100));
 	}
 	
 	
@@ -129,7 +111,7 @@ public class ScatterPlotController {
 	
 	@GetMapping(value = "/scatter/stream/start")
 	public void writeToQueue() {
-		messagingService.produce();
+		messagingService.produceRandomMessages();
 	}
 	
 	

@@ -90,7 +90,7 @@ public class ServiceConfiguration {
 		final ParameterTool params = ParameterTool.fromArgs(properties.getFlink().args);
 		env.getConfig().setGlobalJobParameters(params);
 		setupInputStream(env, params);
-		return streamProcessor(ExecutionType.M4STREAMING, null);
+		return streamProcessor(ExecutionType.VDDASTREAMING, null);
 	}
 
 	@Bean("data-processor.kMeansVDDA")
@@ -156,7 +156,7 @@ public class ServiceConfiguration {
 			case SIMPLESTREAMING:
 				streamProcessor = new StreamDataProcessor(StreamExecutionEnvironment.getExecutionEnvironment());
 				break;
-			case M4STREAMING:
+			case VDDASTREAMING:
 				streamProcessor = new VDDAProcessor(StreamExecutionEnvironment.getExecutionEnvironment());
 				break;
 			case KMEANSVDDA:

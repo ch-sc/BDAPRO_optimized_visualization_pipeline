@@ -59,7 +59,7 @@ public class App {
 		
 		//final DataProcessor dataProcessor = ServiceConfiguration.dataProcessor(ExecutionType.SIMPLESTREAMING, null);
 		final StreamProcessor streamProcessor1 = ServiceConfiguration.streamProcessor(ExecutionType.SIMPLESTREAMING, null);
-		final StreamProcessor streamProcessor2 = ServiceConfiguration.streamProcessor(ExecutionType.M4STREAMING, null);
+		final StreamProcessor streamProcessor2 = ServiceConfiguration.streamProcessor(ExecutionType.VDDASTREAMING, null);
 		final StreamProcessor cluster = ServiceConfiguration.streamProcessor(ExecutionType.KMEANSVDDA, null);
 		
 		int x = 320, y = 480;
@@ -87,7 +87,7 @@ public class App {
 		StopWatch timer = new StopWatch();
 		timer.start();
 
-		DataStream<Tuple3<LocalDateTime, Point, ClusterCenter>> clusters = cluster.cluster(x,y,5,5);
+		DataStream<Tuple3<LocalDateTime, Point, ClusterCenter>> clusters = cluster.cluster(x,y,5,10, Time.hours(5), Time.hours(2));
 
 		timer.stop();
 		log.info("Time for total " + timer.getTime() + "ms");
