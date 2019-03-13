@@ -30,9 +30,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+/**
+ * Calculate k-means without data reduction
+ */
+
 @Slf4j
 public class KMeansSimple extends StreamProcessor {
 
+    /**
+     * gets execution environment
+     * @param env get streaming environment
+     */
 
     public KMeansSimple(StreamExecutionEnvironment env) {
 		super(env);
@@ -158,18 +166,10 @@ public class KMeansSimple extends StreamProcessor {
                     }
                 });
 
-        //result.writeAsText("C:/Users/Laura/documents/DFKI/code/kMeans/data/results.txt");
-        //env.execute();
-
-        //System.out.println(env.getExecutionPlan());
         timer.stop();
 
-        DataStream<Tuple5<Integer,Double,Double, Integer, Long>> clusterCenters = clusters/*.map(new MapFunction<Tuple3<LocalDateTime, Point, ClusterCenter>, Tuple3<String, Integer, TimeWindow>>() {
-            @Override
-            public Tuple2<ClusterCenter, Integer> map(Tuple3<LocalDateTime, Point, ClusterCenter> input) throws Exception {
-                return new Tuple2<>(input.f2, 1);
-            }
-        });*/
+        //cluster ids, clusters with x and y coordinates, a count for how many points are associated with a cluster and the starting time of the window
+        DataStream<Tuple5<Integer,Double,Double, Integer, Long>> clusterCenters = clusters
                 .windowAll(TumblingEventTimeWindows.of(window)).apply(new AllWindowFunction<Tuple3<LocalDateTime, Point, ClusterCenter>, Tuple5<Integer,Double,Double, Integer, Long>, TimeWindow>() {
                     @Override
                     public void apply(TimeWindow timeWindow, Iterable<Tuple3<LocalDateTime, Point, ClusterCenter>> iterable, Collector<Tuple5<Integer,Double,Double, Integer, Long>> collector) throws Exception {
@@ -198,11 +198,6 @@ public class KMeansSimple extends StreamProcessor {
         }).windowAll(TumblingEventTimeWindows.of(window)).sum(0);
 
         log.info("Time for KMeans plain " + timer.getTime() + "ms");
-
-        //clusters.writeAsCsv("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/VDDA/count/yellow_tripdata_2017-12/1/");
-
-        //Generates json to generate an execution graph from
-        //System.out.println(env.getExecutionPlan());
 
         clusterCenters.writeAsCsv("data/out/Simple/yellow_tripdata_2017-12/finalEval/cluster/");
         count.writeAsCsv("data/out/Simple/yellow_tripdata_2017-12/finalEval/count/");

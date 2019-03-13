@@ -33,6 +33,16 @@ public class StreamDataProcessor extends StreamProcessor {
         super(env);
     }
 
+    /**
+     * Not used here.
+     * @param xBound
+     * @param yBound
+     * @param k
+     * @param maxIter
+     * @param window
+     * @param slide
+     * @return
+     */
     @Override
     public DataStream<Tuple3<LocalDateTime, Point, ClusterCenter>> cluster(int xBound, int yBound, int k, int maxIter, Time window, Time slide) {
         return null;
@@ -92,7 +102,7 @@ public class StreamDataProcessor extends StreamProcessor {
             }
         });
 
-        //apply simple stream transformation
+        //apply simple stream transformation with timestamp assignment and tumbling event time window
         DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> points = pDataStream
                 .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple3<LocalDateTime,Double,Double>>() {
                     @Override
@@ -106,13 +116,6 @@ public class StreamDataProcessor extends StreamProcessor {
                         return seconds+min+hr+day+year;
                     }
                 })
-                /*.assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple3<LocalDateTime, Double, Double>>() {
-                    @Override
-                    public long extractAscendingTimestamp(Tuple3<LocalDateTime,Double, Double> event) {
-                        return Long.valueOf(event.f0.getSecond()+event.f0.getMinute()+event.f0.getHour()+event.f0.getDayOfYear()+event.f0.getYear());
-                    }
-                })*/
-                /*.assignTimestampsAndWatermarks(new ExtractAscendingTimestamp())*/
                 .windowAll(TumblingEventTimeWindows.of(window))
                 .apply(new AllWindowFunction<Tuple3<LocalDateTime, Double, Double>, Tuple4<LocalDateTime, Double, Point, Integer>, TimeWindow>()  {
 
@@ -143,15 +146,6 @@ public class StreamDataProcessor extends StreamProcessor {
         log.info("Time for Streamprocessing " + timer.getTime() + "ms");
 
         return points;
-    }
-
-    private static class ExtractAscendingTimestamp extends AscendingTimestampExtractor<Tuple3<LocalDateTime, Double, Double>> {
-
-        long takeTime = System.currentTimeMillis();
-        @Override
-        public long extractAscendingTimestamp(Tuple3<LocalDateTime, Double, Double> localDateTimeDoubleDoubleTuple3) {
-            return takeTime++;
-        }
     }
 
 }
