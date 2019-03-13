@@ -1,14 +1,15 @@
 <h1>Optimizing Data-Intensive Visualization Pipelines using Pixel-Perfect Compression</h1>
 <h2>GROUP 11</h2>
 
-| Member            | Matriculum No.| GitHub  |
-| :---------------- |--------------:| :-------|
-| Christoph Schulze | 389866        | @ch-sc   |
-| Laura Mons        | 364309        | @eleicha |
+| Member            | Matriculum No.| GitHub                                 |
+| :---------------- |--------------:| :--------------------------------------|
+| Christoph Schulze | 389866        | [@ch-sc](https://github.com/ch-sc)     |
+| Laura Mons        | 364309        | [@eleicha](https://github.com/eleicha) |
 
     Supervisor:
      Sebastian Breß
-     @sebastianbress
+     @sebastianbress (https://github.com/sebastianbress)
+     
 
 <h2>Project Summary</h2>
 <p>
@@ -34,41 +35,22 @@ such as k-means to the data afterwards will yield different results since VDDA c
 underlying distribution.
 </p>
 
-
-<h2>Reproducing the Experiment</h2>
-Clone this repository, and follow the instructions of this section to run the experiment on your own.
-
-<h3>Maven</h3>
-To build the sources you can use Maven and run
-```
-mvn compile
-```
-
-<h3>RabbitMQ</h3>
-Pull and start the 'rabbitmq:3-management' docker image (EXPOSE 5672:5672, 8090:15672). By default username and password
-are set to "user" and "password". You may need to enter these credentials when accessing the admin UI of RabbitMQ.
-
-```
-docker run -d --name rabbitmq --hostname my-rabbit -p 5672:5672 -p 8090:15672 -e RABBITMQ_DEFAULT_USER=user -e RABBITMQ_DEFAULT_PASS=password rabbitmq:3-management
-```
-
-<h3>Jupyter Notebook</h3>
-Go into the notebooks directory of this repository and start Juptyer notebook. You should see two different notebooks. 
-Open Notebook 'plots' and run all cells.
-
-```
-cd notebooks
-jupyter notebook
-```
+<h2>
+Deliverables
+</h2>
 
 
-<h3>Do A Test Run</h3>
-Go into your browser and call:
-```
-http://localhost:8082/2d/stream/cluster?x=3840&y=2160&opt=VDDA
-```
-If everything is wired up correctly the request may take a while to finish and should eventually see messages in the 
-Queue. If you exposed the port for RabbitMQ's admin page (8090:15672) you can check whether there are messages in the queue.
-```
-http://localhost:8090/#/queues/%2F/BDAPRO2
-```
+[Report](./FinalReports)
+
+[Midterm presentation](./Presentations/Midterm)
+
+[Final presentation](./Presentations/Final)
+
+[Sources](./Sources/service)
+
+[README](./Sources/service/README.md)
+
+[JavaDoc](./Sources/JavaDoc)
+
+[Notebook](./Sources/notebook)
+
