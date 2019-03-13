@@ -1,4 +1,15 @@
 <h1>Optimizing Data-Intensive Visualization Pipelines using Pixel-Perfect Compression</h1>
+<h2>GROUP 11</h2>
+
+| Member            | Matriculum No.| GitHub  |
+| :---------------- |--------------:| :-------|
+| Christoph Schulze | 389866        | @ch-sc   |
+| Laura Mons        | 364309        | @eleicha |
+
+    Supervisor:
+     Sebastian Breß
+     @sebastianbress
+
 <h2>Description</h2>
 <p>
 Enabling quick and easy interpretations of vast amounts of data collected on a daily basis is a key challenge for any data analyst. In this context, data visualizations have proven themselves as an invaluable tool which is widely used in industry and research.
@@ -82,26 +93,3 @@ Queue. If you exposed the port for RabbitMQ's admin page (8090:15672) you can ch
 ```
 http://localhost:8090/#/queues/%2F/BDAPRO2
 ```
-
-<h2>References</h2>
-[1] U. Jugel et. al.; M4: A Visualization-Oriented Time Series Data Aggregation;
-URL: http://www.vldb.org/pvldb/vol7/p797-jugel.pdf
-
-[2] J. Traub et. al.; I2: Interactive Real-Time Visualization for Streaming Data; 
-URL: https://openproceedings.org/2017/conf/edbt/paper-276.pdf
-
-[3] Eugene Wu:
-Data Visualization Management Systems. CIDR 2015
-
-[4] Eugene Wu, Fotis Psallidas, Zhengjie Miao, Haoci Zhang, Laura Rettig:
-Combining Design and Performance in a Data Visualization Management System. CIDR 2017
-
-[5] Arvind Satyanarayan, Dominik Moritz, Kanit Wongsuphasawat, Jeffrey Heer:
-Vega-Lite: A Grammar of Interactive Graphics. IEEE Trans. Vis. Comput. Graph. 23(1): 341-350 (2017)
-
-[6] Vega-Lite: A Grammar of Interactive Graphics: https://www.domoritz.de/talks/VegaLite-OpenVisConf-2017.pdf
-
-[7] Eleni Tzirita Zacharatou, Harish Doraiswamy, Anastasia Ailamaki, Cláudio T. Silva, Juliana Freire:
-GPU Rasterization for Real-Time Spatial Aggregation over Arbitrary Polygons. 352-365
-
-[8]  G. Burtini, S. Fazackerley, and R. Lawrence. Time series compression for adaptive chart generation. In CCECE, pages 1–6. IEEE, 2013.
