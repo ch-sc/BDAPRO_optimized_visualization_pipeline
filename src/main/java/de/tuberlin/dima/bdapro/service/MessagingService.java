@@ -3,7 +3,6 @@ package de.tuberlin.dima.bdapro.service;
 import java.util.Arrays;
 import java.util.Random;
 
-import de.tuberlin.dima.bdapro.model.dto.TwoDimensionalPlotSto;
 import de.tuberlin.dima.bdapro.util.DataTransformer;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
@@ -56,27 +55,24 @@ public class MessagingService {
 		
 		for (int i = 0; i < amount; i++) {
 			
-			TwoDimensionalPlotSto plot2d = new TwoDimensionalPlotSto();
-			plot2d.setData(new int[100][100]);
-			createDataGrid(plot2d);
-			
-			Object[] payload = DataTransformer.gridToCoordinates(plot2d.getData());
+			int[][] dataGrid = new int[100][100];
+			createDataGrid(dataGrid);
+			Object[] dataTuples = DataTransformer.gridToCoordinates(dataGrid);
 			
 			if (log.isDebugEnabled()) {
-				log.debug("message body: " + Arrays.deepToString(payload));
+				log.debug("message body: " + Arrays.deepToString(dataTuples));
 			}
 			
 			MessageProperties props = new MessageProperties();
 			props.setContentType(MediaType.TEXT_PLAIN_VALUE);
 			
-			rabbitTemplate.convertAndSend(EXCHANGE, ROUTING_KEY_BASE + ".random", payload);
+			rabbitTemplate.convertAndSend(EXCHANGE, ROUTING_KEY_BASE + ".random", dataTuples);
 			
 		}
 	}
 	
 	
-	private void createDataGrid(TwoDimensionalPlotSto plot) {
-		int[][] data = plot.getData();
+	private void createDataGrid(int[][] data) {
 		int[] row;
 		for (int r = 0; r < data.length; r++) {
 			row = data[r];
