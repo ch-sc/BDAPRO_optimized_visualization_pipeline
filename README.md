@@ -31,7 +31,9 @@ Commission. You can download it here:
 [TLC Trip Record Data](https://www1.nyc.gov/site/tlc/about/tlc-trip-record-data.page)
 
 <h3>Maven</h3>
+
 To build the sources you can use Maven
+
 ```
 mvn compile
 ```
@@ -53,13 +55,16 @@ cd notebooks
 jupyter notebook
 ```
 
-
 <h3>Do a Test Run</h3>
+
 Go into your browser and call:
+
 ```
 http://localhost:8082/2d/stream/cluster?x=3840&y=2160&opt=VDDA
 ```
+
 If everything is wired up correctly the request may take a while to finish and should eventually see messages in the 
 Queue. If you exposed the port for RabbitMQ's admin page (8090:15672) you can check whether there are messages in the queue.
 ```
 http://localhost:8090/#/queues/%2F/BDAPRO2
+```
