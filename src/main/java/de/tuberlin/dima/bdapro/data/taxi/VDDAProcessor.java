@@ -34,6 +34,17 @@ public class VDDAProcessor extends StreamProcessor {
         super(env);
     }
 
+    /**
+     * Not used here.
+     * @param xBound
+     * @param yBound
+     * @param k
+     * @param maxIter
+     * @param window
+     * @param slide
+     * @return
+     */
+
     @Override
     public DataStream<Tuple3<LocalDateTime, Point, ClusterCenter>> cluster(int xBound, int yBound, int k, int maxIter, Time window, Time slide) {
         return null;
@@ -93,6 +104,7 @@ public class VDDAProcessor extends StreamProcessor {
             }
         });
 
+        //assign timestamps, divide into tumbling event time window, calculate VDDA inside apply function
         DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> resultStream = pDataStream
                 .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple3<LocalDateTime,Double,Double>>() {
                     @Override
@@ -106,8 +118,6 @@ public class VDDAProcessor extends StreamProcessor {
                         return seconds+min+hr+day+year;
                     }
                 })
-                //assigning current milliseconds and counting upwards
-                /*.assignTimestampsAndWatermarks(new ExtractAscendingTimestamp())*/
                 .windowAll(TumblingEventTimeWindows.of(window))
                 .apply(new AllWindowFunction<Tuple3<LocalDateTime, Double, Double>, Tuple4<LocalDateTime, Double, Point, Integer>, TimeWindow>() {
                     @Override
@@ -176,15 +186,6 @@ public class VDDAProcessor extends StreamProcessor {
 
         return resultStream;
 
-    }
-
-    private static class ExtractAscendingTimestamp extends AscendingTimestampExtractor<Tuple3<LocalDateTime, Double, Double>> {
-
-        long takeTime = System.currentTimeMillis();
-        @Override
-        public long extractAscendingTimestamp(Tuple3<LocalDateTime, Double, Double> localDateTimeDoubleDoubleTuple3) {
-            return takeTime++;
-        }
     }
 
 

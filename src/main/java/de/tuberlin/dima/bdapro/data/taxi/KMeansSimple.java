@@ -1,32 +1,34 @@
 package de.tuberlin.dima.bdapro.data.taxi;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-
 import de.tuberlin.dima.bdapro.data.StreamProcessor;
 import de.tuberlin.dima.bdapro.error.BusinessException;
 import de.tuberlin.dima.bdapro.model.ClusterCenter;
 import de.tuberlin.dima.bdapro.model.Point;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.time.StopWatch;
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.java.tuple.Tuple1;
-import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.api.java.tuple.Tuple3;
-import org.apache.flink.api.java.tuple.Tuple4;
+import org.apache.flink.api.java.tuple.*;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
 import org.apache.flink.streaming.api.functions.windowing.AllWindowFunction;
+import org.apache.flink.streaming.api.functions.windowing.WindowFunction;
+import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
+import org.apache.flink.streaming.api.windowing.assigners.SlidingProcessingTimeWindows;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
+import org.apache.commons.lang3.time.StopWatch;
+import lombok.extern.slf4j.Slf4j;
+
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 @Slf4j
 public class KMeansSimple extends StreamProcessor {
@@ -162,15 +164,15 @@ public class KMeansSimple extends StreamProcessor {
         //System.out.println(env.getExecutionPlan());
         timer.stop();
 
-        DataStream<Tuple2<ClusterCenter, Integer>> clusterCenters = clusters/*.map(new MapFunction<Tuple3<LocalDateTime, Point, ClusterCenter>, Tuple2<ClusterCenter, Integer>>() {
+        DataStream<Tuple5<Integer,Double,Double, Integer, Long>> clusterCenters = clusters/*.map(new MapFunction<Tuple3<LocalDateTime, Point, ClusterCenter>, Tuple3<String, Integer, TimeWindow>>() {
             @Override
             public Tuple2<ClusterCenter, Integer> map(Tuple3<LocalDateTime, Point, ClusterCenter> input) throws Exception {
                 return new Tuple2<>(input.f2, 1);
             }
         });*/
-                .windowAll(TumblingEventTimeWindows.of(window)).apply(new AllWindowFunction<Tuple3<LocalDateTime, Point, ClusterCenter>, Tuple2<ClusterCenter, Integer>, TimeWindow>() {
+                .windowAll(TumblingEventTimeWindows.of(window)).apply(new AllWindowFunction<Tuple3<LocalDateTime, Point, ClusterCenter>, Tuple5<Integer,Double,Double, Integer, Long>, TimeWindow>() {
                     @Override
-                    public void apply(TimeWindow timeWindow, Iterable<Tuple3<LocalDateTime, Point, ClusterCenter>> iterable, Collector<Tuple2<ClusterCenter, Integer>> collector) throws Exception {
+                    public void apply(TimeWindow timeWindow, Iterable<Tuple3<LocalDateTime, Point, ClusterCenter>> iterable, Collector<Tuple5<Integer,Double,Double, Integer, Long>> collector) throws Exception {
 
                         HashMap<Integer, Tuple2<ClusterCenter, Integer>> pointsInClusters = new HashMap<>();
 
@@ -183,7 +185,7 @@ public class KMeansSimple extends StreamProcessor {
 
                         pointsInClusters.entrySet().stream()
                                 .forEach(e -> {
-                                    collector.collect(new Tuple2<>(e.getValue().f0, e.getValue().f1));
+                                    collector.collect(new Tuple5<>(e.getValue().f0.getId(), e.getValue().f0.getFields()[0], e.getValue().f0.getFields()[1], e.getValue().f1, timeWindow.getStart()));
                                 });
                     }
                 });
@@ -200,11 +202,10 @@ public class KMeansSimple extends StreamProcessor {
         //clusters.writeAsCsv("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/VDDA/count/yellow_tripdata_2017-12/1/");
 
         //Generates json to generate an execution graph from
-        //System.out.println("Job Execution graph");
         //System.out.println(env.getExecutionPlan());
 
-//        clusterCenters.writeAsCsv("data/out/Simple/yellow_tripdata_2017-12/jobgraph/2/cluster/");
-//        count.writeAsCsv("data/out/Simple/yellow_tripdata_2017-12/jobgraph/2/count/");
+        clusterCenters.writeAsCsv("data/out/Simple/yellow_tripdata_2017-12/finalEval/cluster/");
+        count.writeAsCsv("data/out/Simple/yellow_tripdata_2017-12/finalEval/count/");
 
         try {
             env.execute("Streaming Iteration Example");
@@ -271,7 +272,7 @@ public class KMeansSimple extends StreamProcessor {
             }
         });
 
-        //apply simple stream transformation
+        //apply simple stream transformation with timestamp assignment and tumbling event time window
         DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> points = pDataStream
                 .assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple3<LocalDateTime,Double,Double>>() {
                     @Override
@@ -285,13 +286,6 @@ public class KMeansSimple extends StreamProcessor {
                         return seconds+min+hr+day+year;
                     }
                 })
-                /*.assignTimestampsAndWatermarks(new AscendingTimestampExtractor<Tuple3<LocalDateTime, Double, Double>>() {
-                    @Override
-                    public long extractAscendingTimestamp(Tuple3<LocalDateTime,Double, Double> event) {
-                        return Long.valueOf(event.f0.getSecond()+event.f0.getMinute()+event.f0.getHour()+event.f0.getDayOfYear()+event.f0.getYear());
-                    }
-                })*/
-                /*.assignTimestampsAndWatermarks(new ExtractAscendingTimestamp())*/
                 .windowAll(TumblingEventTimeWindows.of(window))
                 .apply(new AllWindowFunction<Tuple3<LocalDateTime, Double, Double>, Tuple4<LocalDateTime, Double, Point, Integer>, TimeWindow>()  {
 
@@ -324,13 +318,5 @@ public class KMeansSimple extends StreamProcessor {
         return points;
     }
 
-    private static class ExtractAscendingTimestamp extends AscendingTimestampExtractor<Tuple3<LocalDateTime, Double, Double>> {
-
-        long takeTime = System.currentTimeMillis();
-        @Override
-        public long extractAscendingTimestamp(Tuple3<LocalDateTime, Double, Double> localDateTimeDoubleDoubleTuple3) {
-            return takeTime++;
-        }
-    }
 
 }
