@@ -3,25 +3,17 @@ package de.tuberlin.dima.bdapro;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 
-import de.tuberlin.dima.bdapro.config.AppConfigLoader;
-import de.tuberlin.dima.bdapro.config.DataConfig;
-import de.tuberlin.dima.bdapro.config.ServiceConfiguration;
-import de.tuberlin.dima.bdapro.config.ServiceProperties;
-import de.tuberlin.dima.bdapro.data.DataProcessor;
 import de.tuberlin.dima.bdapro.data.StreamProcessor;
-import de.tuberlin.dima.bdapro.error.BusinessException;
+import de.tuberlin.dima.bdapro.data.taxi.KMeansVDDA;
+import de.tuberlin.dima.bdapro.data.taxi.StreamDataProcessor;
+import de.tuberlin.dima.bdapro.data.taxi.VDDAProcessor;
 import de.tuberlin.dima.bdapro.model.ClusterCenter;
-import de.tuberlin.dima.bdapro.model.ExecutionType;
 import de.tuberlin.dima.bdapro.model.Point;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.time.StopWatch;
-import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
-import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
 @Slf4j
@@ -58,9 +50,13 @@ public class App {
 		}*/
 		
 		//final DataProcessor dataProcessor = ServiceConfiguration.dataProcessor(ExecutionType.SIMPLESTREAMING, null);
-		final StreamProcessor streamProcessor1 = ServiceConfiguration.streamProcessor(ExecutionType.SIMPLESTREAMING, null);
-		final StreamProcessor streamProcessor2 = ServiceConfiguration.streamProcessor(ExecutionType.VDDASTREAMING, null);
-		final StreamProcessor cluster = ServiceConfiguration.streamProcessor(ExecutionType.KMEANSVDDA, null);
+
+
+		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+		
+		final StreamProcessor streamProcessor1 = new StreamDataProcessor(env);
+		final StreamProcessor streamProcessor2 = new VDDAProcessor(env);
+		final StreamProcessor cluster = new KMeansVDDA(env);
 		
 		int x = 320, y = 480;
 		/*

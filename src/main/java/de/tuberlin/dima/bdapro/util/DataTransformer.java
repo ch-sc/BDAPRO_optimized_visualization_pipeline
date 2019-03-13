@@ -9,8 +9,9 @@ public class DataTransformer {
 	/**
 	 * Transforms an integer n*m matrix into an array of 3-tuples (x,y,value).
 	 *
-	 * @param grid
-	 * @return
+	 * @param grid input data grid
+	 * @return array of nested integer arrays which contain three values: x-coordinate, y-coordinate, and the value from
+	 * the input grid
 	 */
 	public static Object[] gridToCoordinates(int[][] grid) {
 		List<int[]> list = new ArrayList<>(grid.length);

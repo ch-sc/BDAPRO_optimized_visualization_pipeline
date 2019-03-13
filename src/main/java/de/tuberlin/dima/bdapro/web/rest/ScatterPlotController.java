@@ -19,6 +19,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * REST Controller providing a HTTP interface for clients
+ */
 @RestController
 @RequestMapping("/2d")
 @Log4j2
@@ -65,17 +68,22 @@ public class ScatterPlotController {
 	
 	@GetMapping(value = "/stream/cluster")
 	public void createClusterStreamAsync(@ModelAttribute("bounds") DimensionalityBounds bounds,
-			@RequestParam(value = "f", required = false, defaultValue = "KMEANSVDDA") ExecutionType executionType) {
-		dataService.clusterAsync(executionType, bounds.x, bounds.y, 5, 5, Time.hours(10),
-				Time.milliseconds(100));
+			@RequestParam(value = "f", required = false, defaultValue = "KMEANSVDDA") ExecutionType executionType,
+			@RequestParam(value = "iterations", required = false, defaultValue = "1000") Integer iterations,
+			@RequestParam(value = "window", required = false, defaultValue = "3600000") Long windowSize,
+			@RequestParam(value = "slide", required = false, defaultValue = "3600000") Long slide) {
+		dataService.cluster(executionType, bounds.x, bounds.y, 5, iterations, Time.milliseconds(windowSize),
+				Time.milliseconds(slide));
 	}
 	
 	
 	@GetMapping(value = "/stream/scatter")
 	public void createScatterStreamAsync(@ModelAttribute("bounds") DimensionalityBounds bounds,
-			@RequestParam(value = "f", required = false, defaultValue = "VDDASTREAMING") ExecutionType executionType) {
-		dataService.scatterAsync(ExecutionType.KMEANSVDDA, bounds.x, bounds.y, Time.hours(10),
-				Time.milliseconds(100));
+			@RequestParam(value = "f", required = false, defaultValue = "VDDASTREAMING") ExecutionType executionType,
+			@RequestParam(value = "window", required = false, defaultValue = "3600000") Long windowSize,
+			@RequestParam(value = "slide", required = false, defaultValue = "3600000") Long slide) {
+		dataService.doScatterStreaming(executionType, bounds.x, bounds.y, Time.milliseconds(windowSize),
+				Time.milliseconds(slide));
 	}
 	
 	

@@ -10,7 +10,9 @@ import de.tuberlin.dima.bdapro.data.GenericDataAccessor;
 import de.tuberlin.dima.bdapro.data.StreamProcessor;
 import de.tuberlin.dima.bdapro.data.taxi.*;
 import de.tuberlin.dima.bdapro.model.ExecutionType;
+import de.tuberlin.dima.bdapro.model.OptimizationType;
 import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.tuple.Tuple2;
@@ -29,7 +31,7 @@ import org.springframework.context.annotation.Configuration;
 
 @EnableConfigurationProperties(ServiceProperties.class)
 @Configuration
-@Log
+@Slf4j
 public class ServiceConfiguration {
 	
 	private static final int BOUND = 1_000_000;
@@ -42,9 +44,9 @@ public class ServiceConfiguration {
     public DataProcessor streamingProcessor() {
     	return dataProcessor(ExecutionType.SIMPLESTREAMING, null);
     }*/
-
-
-    @Bean("data-processor.flink")
+	
+	
+	@Bean("data-processor.flink")
 	public DataProcessor dataAccessorFlink() {
 		return dataProcessor(ExecutionType.FLINK, properties.getData());
 	}
@@ -60,69 +62,33 @@ public class ServiceConfiguration {
 	public DataProcessor dataAccessorParallel() {
 		return dataProcessor(ExecutionType.PARALLEL, properties.getData());
 	}
-
-
-	/*Definierte entität, die zu späterem Zeitpunkt instantiiert und benutzt werden kann. Bekommen stream processor zurück
-	* Spirng properties werden in dieser Klasse instantiiert, e.g. config für flink und output und input files.
-	* */
+	
+	
 	@Bean("data-processor.simpleStream")
 	public StreamProcessor simpleStreamProcessor() {
-		// obtain execution environment and set setBufferTimeout to 1 to enable
-		// continuous flushing of the output buffers (lowest latency)
-		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment()
-				.setBufferTimeout(1);
-		// make parameters available in the web interface
-		// Checking input parameters
-		final ParameterTool params = ParameterTool.fromArgs(properties.getFlink().args);
-		env.getConfig().setGlobalJobParameters(params);
-		setupInputStream(env, params);
-		return streamProcessor(ExecutionType.SIMPLESTREAMING, null);
+		return streamProcessor(ExecutionType.STREAMING, OptimizationType.VDDA);
 	}
-
+	
+	
 	@Bean("data-processor.m4Stream")
 	public StreamProcessor streamDataProcessor() {
-		// obtain execution environment and set setBufferTimeout to 1 to enable
-		// continuous flushing of the output buffers (lowest latency)
-		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment()
-				.setBufferTimeout(1);
-		// make parameters available in the web interface
-		// Checking input parameters
-		final ParameterTool params = ParameterTool.fromArgs(properties.getFlink().args);
-		env.getConfig().setGlobalJobParameters(params);
-		setupInputStream(env, params);
-		return streamProcessor(ExecutionType.VDDASTREAMING, null);
+		return streamProcessor(ExecutionType.STREAMING, OptimizationType.VDDA);
 	}
-
+	
+	
 	@Bean("data-processor.kMeansVDDA")
 	public StreamProcessor kMeansVDDA() {
-		// obtain execution environment and set setBufferTimeout to 1 to enable
-		// continuous flushing of the output buffers (lowest latency)
-		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment()
-				.setBufferTimeout(1);
-		// make parameters available in the web interface
-		// Checking input parameters
-		final ParameterTool params = ParameterTool.fromArgs(properties.getFlink().args);
-		env.getConfig().setGlobalJobParameters(params);
-		setupInputStream(env, params);
-		return streamProcessor(ExecutionType.KMEANSVDDA, null);
+		return streamProcessor(ExecutionType.CLUSTERING, OptimizationType.VDDA);
 	}
-
+	
+	
 	@Bean("data-processor.kMeans")
 	public StreamProcessor kMeans() {
-		// obtain execution environment and set setBufferTimeout to 1 to enable
-		// continuous flushing of the output buffers (lowest latency)
-		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment()
-				.setBufferTimeout(1);
-		// make parameters available in the web interface
-		// Checking input parameters
-		final ParameterTool params = ParameterTool.fromArgs(properties.getFlink().args);
-		env.getConfig().setGlobalJobParameters(params);
-		setupInputStream(env, params);
-		return streamProcessor(ExecutionType.KMEANS, null);
+		return streamProcessor(ExecutionType.CLUSTERING, OptimizationType.NONE);
 	}
 	
 	
-	public static DataProcessor dataProcessor(ExecutionType executionType, DataConfig config) {
+	private static DataProcessor dataProcessor(ExecutionType executionType, DataConfig config) {
 		if (executionType == null) {
 			executionType = ExecutionType.SEQUENTIAL;
 		}
@@ -144,36 +110,47 @@ public class ServiceConfiguration {
 		
 		return dataProcessor;
 	}
-
-	public static StreamProcessor streamProcessor(ExecutionType executionType, DataConfig config){
-		if (executionType == null){
-			executionType = ExecutionType.SIMPLESTREAMING;
+	
+	
+	private StreamProcessor streamProcessor(ExecutionType executionType, OptimizationType optimizationType) {
+		if (executionType == null) {
+			executionType = ExecutionType.STREAMING;
 		}
+		
+		// obtain execution environment and set setBufferTimeout to 1 to enable
+		// continuous flushing of the output buffers (lowest latency)
+		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment()
+				.setBufferTimeout(60000);
+		// make parameters available in the web interface
+		// Checking input parameters
+		final ParameterTool params = ParameterTool.fromArgs(properties.getFlink().args);
+		env.getConfig().setGlobalJobParameters(params);
+		setupInputStream(env, params);
 
-		StreamProcessor streamProcessor;
-		switch (executionType){
+//		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+		
+		switch (executionType) {
 			default:
-			case SIMPLESTREAMING:
-				streamProcessor = new StreamDataProcessor(StreamExecutionEnvironment.getExecutionEnvironment());
-				break;
-			case VDDASTREAMING:
-				streamProcessor = new VDDAProcessor(StreamExecutionEnvironment.getExecutionEnvironment());
-				break;
-			case KMEANSVDDA:
-				streamProcessor = new KMeansVDDA(StreamExecutionEnvironment.getExecutionEnvironment());
-				break;
-			case KMEANS:
-				streamProcessor = new KMeansSimple(StreamExecutionEnvironment.getExecutionEnvironment());
-				break;
+			case STREAMING:
+				if (optimizationType == OptimizationType.VDDA) {
+					return new VDDAProcessor(env);
+				} else {
+					return new StreamDataProcessor(env);
+				}
+			case CLUSTERING:
+				if (optimizationType == OptimizationType.VDDA) {
+					return new KMeansVDDA(env);
+				} else {
+					return new KMeansSimple(env);
+				}
 		}
-		return streamProcessor;
 	}
 	
 	
 	private static TaxiRide loadTaxiData(DataConfig config) {
 		// ToDo: switch to a more generic approach
 		// ToDo: load data from different data sources -> use JClouds or Hadoop
-
+		
 		GenericDataAccessor<TaxiRide> dataAccessor = new GenericDataAccessor<>(new File(config.getDataLocation()));
 		dataAccessor.loadData(TaxiRide::loadData);
 		return new TaxiRide(dataAccessor, dataAccessor.getCursor() + 0, dataAccessor.getLength());
@@ -324,7 +301,7 @@ public class ServiceConfiguration {
 		
 		@Override
 		public void run(SourceContext<Tuple2<Integer, Integer>> ctx) throws Exception {
-
+			
 			while (isRunning && counter < BOUND) {
 				int first = rnd.nextInt(BOUND);
 				int second = rnd.nextInt(BOUND);

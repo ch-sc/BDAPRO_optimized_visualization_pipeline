@@ -12,8 +12,8 @@ import de.tuberlin.dima.bdapro.data.StreamProcessor;
 import de.tuberlin.dima.bdapro.error.BusinessException;
 import de.tuberlin.dima.bdapro.model.ClusterCenter;
 import de.tuberlin.dima.bdapro.model.ExecutionType;
+import de.tuberlin.dima.bdapro.model.OptimizationType;
 import de.tuberlin.dima.bdapro.model.Point;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -22,12 +22,10 @@ import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.rabbitmq.RMQSink;
 import org.apache.flink.streaming.connectors.rabbitmq.common.RMQConnectionConfig;
-import org.apache.flink.util.Collector;
 import org.apache.flink.util.OutputTag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -36,10 +34,10 @@ import org.springframework.stereotype.Service;
 @Service
 @Slf4j
 public class DataService {
-
+	
 	final OutputTag<Object[]> outputTag = new OutputTag<Object[]>("side-output") {
 	};
-
+	
 	@Autowired
 	@Qualifier("data-processor.sequential")
 	private DataProcessor sequentialDataProcessor;
@@ -49,6 +47,7 @@ public class DataService {
 	@Autowired
 	@Qualifier("data-processor.flink")
 	private DataProcessor flinkDataProcessor;
+	
 	@Autowired
 	@Qualifier("data-processor.m4Stream")
 	private StreamProcessor vddaStreamProcessor;
@@ -61,31 +60,71 @@ public class DataService {
 	@Autowired
 	@Qualifier("data-processor.kMeans")
 	private StreamProcessor kMeansProcessor;
-
-
+	
+	@Autowired
+	private RMQConnectionConfig rmqConnectionConfig;
+	
+	/**
+	 * Creates a two-dimensional data grid on the experiment data while reducing data within given boundaries. The
+	 * execution type determines what implementation to use.
+	 *
+	 * @param executionType type of execution
+	 * @param x boundary of the first dimension
+	 * @param y boundary of the second dimension
+	 * @return a two-dimensional integer matrix containing the number of data points per entry
+	 */
 	public int[][] scatterPlot(ExecutionType executionType, int x, int y) {
 		return selectDataProcessor(executionType)
 				.scatterPlot(x, y);
 	}
-
-
+	
+	
+	/**
+	 * Creates a two-dimensional data grid based on the experiment data without any data reduction. The execution type
+	 * determines what implementation to use.
+	 *
+	 * @param executionType type of execution
+	 * @return a two-dimensional integer matrix containing the number of data points per entry
+	 */
 	public int[][] scatterPlot(ExecutionType executionType) {
 		return selectDataProcessor(executionType)
 				.scatterPlot();
 	}
-
 	
-	public void scatterAsync(ExecutionType execType, int x, int y, Time window, Time slide) {
-		StreamProcessor streamProcessor = selectStreamProcessor(execType);
-
+	
+	/**
+	 * Invokes Flink streaming on the experiment data set to build data points in a two-dimensional scatter plot.
+	 * Results are  written to the message broker.
+	 *
+	 * @param optimizationType optimization type
+	 * @param x boundary of the first dimension
+	 * @param y boundary of the second dimension
+	 * @param window window size for streaming over the input data
+	 * @param slide window shift
+	 */
+	public void doScatterStreaming(OptimizationType optimizationType, int x, int y, Time window, Time slide) {
+		StreamProcessor streamProcessor = selectStreamProcessor(ExecutionType.STREAMING, optimizationType);
+		
 		DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> scatterPlotStream =
 				streamProcessor.scatterPlot(x, y, window, slide);
 	}
 	
 	
-	public void clusterAsync(ExecutionType execType, int x, int y, int k, int maxIter, Time window, Time slide) {
-		StreamProcessor streamProcessor = selectStreamProcessor(execType);
-
+	/**
+	 * Invokes Flink streaming on the experiment data set, building data points for a two-dimensional scatter plot and
+	 * clusters these data points. Results are written to the message broker.
+	 *
+	 * @param optimizationType optimization type
+	 * @param x bounday of the first dimension
+	 * @param y bounday of the second dimension
+	 * @param k number of clusters
+	 * @param maxIter maximum number of iterations in k-means
+	 * @param window window size for streaming over the input data
+	 * @param slide window shift
+	 */
+	public void cluster(OptimizationType optimizationType, int x, int y, int k, int maxIter, Time window, Time slide) {
+		StreamProcessor streamProcessor = selectStreamProcessor(ExecutionType.CLUSTERING, optimizationType);
+		
 		DataStream<Tuple3<LocalDateTime, Point, ClusterCenter>> clusterStream =
 				streamProcessor.cluster(x, y, k, maxIter, window, slide);
 		
@@ -94,63 +133,46 @@ public class DataService {
 				.windowAll(TumblingEventTimeWindows.of(window))
 				.aggregate(catchTuples)
 				.addSink(rabbitMqSink());
-
+		
 		try {
 			streamProcessor.run();
 		} catch (Exception e) {
-			throw new BusinessException("Flink job throw an error: " + ExceptionUtils.getMessage(e), e);
+			throw new BusinessException("Flink job threw an error: " + ExceptionUtils.getMessage(e), e);
 		}
 
-//		DataStream<Object[]> sideOutputStream = mainDataStream.getSideOutput(outputTag);
 	}
 	
 	
 	private RMQSink<Object[]> rabbitMqSink() {
-		final RMQConnectionConfig connectionConfig = new RMQConnectionConfig.Builder()
-				.setHost("localhost")
-				.setVirtualHost("/")
-				.setPort(5672)
-				.setUserName("user")
-				.setPassword("password")
-				.build();
-
-		return new RMQSink<>(
-				connectionConfig,            // config for the RabbitMQ connection
-				"BDAPRO2",                    // name of the RabbitMQ queue to send messages to
-				new SerializationSchemaImpl()
-		);
+		return new RMQSink<>(rmqConnectionConfig, "BDAPRO2", new SerializationSchemaImpl());
 	}
-
-
-	private StreamProcessor selectStreamProcessor(ExecutionType execType) {
-
-		StreamProcessor streamProcessor;
-
+	
+	
+	private StreamProcessor selectStreamProcessor(ExecutionType execType, OptimizationType optimizationType) {
+		
 		switch (execType) {
 			default:
 			case SEQUENTIAL:
 			case PARALLEL:
 			case FLINK:
 				throw new NotImplementedException(
-						"SEQUENTIAL and PARALLEL and FLINK execution environments are not supported for async clustering");
-			case SIMPLESTREAMING:
-				streamProcessor = simpleStreamProcessor;
-				break;
-			case VDDASTREAMING:
-				streamProcessor = vddaStreamProcessor;
-				break;
-			case KMEANSVDDA:
-				streamProcessor = kMeansVDDAProcessor;
-				break;
-			case KMEANS:
-				streamProcessor = kMeansProcessor;
-				break;
+						"execution type " + execType + " not supported for any Flink execution environment");
+			case STREAMING:
+				if (optimizationType == OptimizationType.VDDA) {
+					return vddaStreamProcessor;
+				} else {
+					return simpleStreamProcessor;
+				}
+			case CLUSTERING:
+				if (optimizationType == OptimizationType.VDDA) {
+					return kMeansVDDAProcessor;
+				} else {
+					return kMeansProcessor;
+				}
 		}
-
-		return streamProcessor;
 	}
-
-
+	
+	
 	private DataProcessor selectDataProcessor(ExecutionType execType) {
 		switch (execType) {
 			case SEQUENTIAL:
@@ -159,25 +181,23 @@ public class DataService {
 				return parallelDataProcessor;
 			case FLINK:
 				return flinkDataProcessor;
-			case SIMPLESTREAMING:
-			case VDDASTREAMING:
-			case KMEANSVDDA:
-			case KMEANS:
+			case STREAMING:
+			case CLUSTERING:
 			default:
 				throw new NotImplementedException(
-						"SEQUENTIAL and PARALLEL and FLINK execution environments are not supported for async clustering");
+						"execution type " + execType + " not supported for any vanilla Java data processing");
 		}
 	}
-
-
+	
+	
 	private AggregateFunction catchTuples =
 			new AggregateFunction<Tuple3<LocalDateTime, Point, ClusterCenter>, List<int[]>, Object[]>() {
 				@Override
 				public List<int[]> createAccumulator() {
 					return new ArrayList<>(1000);
 				}
-
-
+				
+				
 				@Override
 				public List<int[]> add(
 						Tuple3<LocalDateTime, Point, ClusterCenter> tuple,
@@ -189,48 +209,26 @@ public class DataService {
 					acc.add(entry);
 					return acc;
 				}
-
-
+				
+				
 				@Override
 				public Object[] getResult(List<int[]> integers) {
 					return integers.toArray();
 				}
-
-
+				
+				
 				@Override
 				public List<int[]> merge(List<int[]> acc1, List<int[]> acc2) {
 					acc1.addAll(acc2);
 					return acc1;
 				}
 			};
-
-
-	@AllArgsConstructor
-	public static class SideOutProcess extends ProcessFunction<Object[], Object[]> implements Serializable {
-
-		final private MessagingService messagingService;
-		final private OutputTag<Object[]> outputTag;
-
-
-		@Override
-		public void processElement(Object[] dataPoints, Context ctx, Collector<Object[]> collector) throws Exception {
-			// emit data to regular output
-			collector.collect(dataPoints);
-
-			// send processed data to queue
-			messagingService.send(MessagingService.CLUSTER_DATAPOINTS, dataPoints);
-			
-			// emit data to side output
-			ctx.output(outputTag, dataPoints);
-
-		}
-	}
-
+	
 	public static class SerializationSchemaImpl implements SerializationSchema<Object[]>, Serializable {
-
+		
 		ObjectMapper mapper = new ObjectMapper();
-
-
+		
+		
 		@Override
 		public byte[] serialize(Object[] objects) {
 			try {

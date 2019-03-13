@@ -11,29 +11,44 @@ import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 @Log4j2
 @Service
 public class MessagingService {
 	
-	@Autowired
-	private RabbitTemplate rabbitTemplate;
+	private final RabbitTemplate rabbitTemplate;
 	
 	private static final String EXCHANGE = "BDAPRO";
 	private static final String ROUTING_KEY_BASE = "plot.2d";
-	static final String CLUSTER_DATAPOINTS = "CLUSTER_DATAPOINTS";
 	
-	Random random = new Random(101);
+	private static final Random random = new Random(101);
 	
 	
+	@Autowired
+	public MessagingService(RabbitTemplate rabbitTemplate) {
+		this.rabbitTemplate = rabbitTemplate;
+	}
+	
+	
+	/**
+	 * sends a message to the RabbitMQ message broker.
+	 *
+	 * @param key key of the message
+	 * @param data body of the message
+	 */
 	public void send(String key, Object[] data) {
 		String routingKey = ROUTING_KEY_BASE + (StringUtils.isBlank(key) ? "" : '.' + key);
 		rabbitTemplate.convertAndSend(EXCHANGE, routingKey, data);
 	}
 	
 	
+	/**
+	 * creates random data grids of size 100x100, with a filling rate of about 25% and sends its data points as messages
+	 * to the RabbitMQ message broker.
+	 *
+	 * @param amount amount of generated data grids
+	 */
 	//	@Scheduled(fixedRate = 500)
 	public void sendRandom(int amount) {
 		

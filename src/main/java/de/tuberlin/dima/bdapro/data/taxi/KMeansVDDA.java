@@ -15,14 +15,15 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.java.tuple.*;
+import org.apache.flink.api.java.tuple.Tuple1;
+import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.java.tuple.Tuple3;
+import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;
 import org.apache.flink.streaming.api.functions.windowing.AllWindowFunction;
-import org.apache.flink.streaming.api.functions.windowing.WindowFunction;
-import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
@@ -199,7 +200,7 @@ public class KMeansVDDA extends StreamProcessor{
         //clusters.writeAsCsv("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/VDDA/count/yellow_tripdata_2017-12/1/");
 
         //Generates json to generate an execution graph from
-        //System.out.println(env.getExecutionPlan());
+        System.out.println(env.getExecutionPlan());
 
         //clusterCenters.writeAsCsv("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/VDDA/yellow_tripdata_2017-12/test/2/cluster/");
         //count.writeAsCsv("/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/VDDA/yellow_tripdata_2017-12/test/2/count/");
@@ -235,7 +236,7 @@ public class KMeansVDDA extends StreamProcessor{
         // execute the program
 
         //read input file
-        dataStream = env.readTextFile("data/file.csv");
+        dataStream = env.readTextFile("data/yellow_tripdata_2017-12_small.csv");
 
         //filter for the first two rows
         dataStream = dataStream.filter(new FilterFunction<String>() {
