@@ -45,17 +45,43 @@ Good knowledge in various visualization techniques
 </li>
 </ul>
 
+<h2>Reproducing the Experiment</h2>
+Clone this repository, and follow the instructions of this section to run the experiment on your own.
 
-<h2>RabbitMQ</h2>
-Start the docker image: (EXPOSE 5672:5672 8090:15672)
+<h3>Maven</h3>
+To build the sources you can use Maven and run
+```
+mvn compile
+```
+
+<h3>RabbitMQ</h3>
+Pull and start the 'rabbitmq:3-management' docker image (EXPOSE 5672:5672, 8090:15672). By default username and password
+are set to "user" and "password". You may need to enter these credentials when accessing the admin UI of RabbitMQ.
 
 ```
 docker run -d --name rabbitmq --hostname my-rabbit -p 5672:5672 -p 8090:15672 -e RABBITMQ_DEFAULT_USER=user -e RABBITMQ_DEFAULT_PASS=password rabbitmq:3-management
 ```
 
-Enter web UI @ [localhost:8090] and create an Exchange 'BDAPRO' and a Queue 'BDAPRO'. Then create a binding for both.
+<h3>Jupyter Notebook</h3>
+Go into the notebooks directory of this repository and start Juptyer notebook. You should see two different notebooks. 
+Open Notebook 'plots' and run all cells.
+
+```
+cd notebooks
+jupyter notebook
+```
 
 
+<h3>Do A Test Run</h3>
+Go into your browser and call:
+```
+http://localhost:8082/2d/stream/cluster?x=3840&y=2160&opt=VDDA
+```
+If everything is wired up correctly the request may take a while to finish and should eventually create messages in the 
+Queue. If you exposed the port for RabbitMQ's admin page (8090:15672) you can check whether there are messages in the queue.
+```
+http://localhost:8090/#/queues/%2F/BDAPRO2
+```
 
 <h2>References</h2>
 [1] U. Jugel et. al.; M4: A Visualization-Oriented Time Series Data Aggregation;
