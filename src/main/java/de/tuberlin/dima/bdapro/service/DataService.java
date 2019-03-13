@@ -64,6 +64,7 @@ public class DataService {
 	@Autowired
 	private RMQConnectionConfig rmqConnectionConfig;
 	
+	
 	/**
 	 * Creates a two-dimensional data grid on the experiment data while reducing data within given boundaries. The
 	 * execution type determines what implementation to use.
@@ -107,6 +108,12 @@ public class DataService {
 		
 		DataStream<Tuple4<LocalDateTime, Double, Point, Integer>> scatterPlotStream =
 				streamProcessor.scatterPlot(x, y, window, slide);
+		
+		try {
+			streamProcessor.run();
+		} catch (Exception e) {
+			throw new BusinessException("Flink job threw an error: " + ExceptionUtils.getMessage(e), e);
+		}
 	}
 	
 	
@@ -139,7 +146,7 @@ public class DataService {
 		} catch (Exception e) {
 			throw new BusinessException("Flink job threw an error: " + ExceptionUtils.getMessage(e), e);
 		}
-
+		
 	}
 	
 	

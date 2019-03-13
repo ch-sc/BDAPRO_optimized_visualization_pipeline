@@ -6,24 +6,20 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Spliterator;
 import java.util.UUID;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import de.tuberlin.dima.bdapro.data.DataStore;
 import de.tuberlin.dima.bdapro.data.GenericDataAccessor;
 import de.tuberlin.dima.bdapro.data.IDataAccessor;
 import de.tuberlin.dima.bdapro.data.Streamable;
 import de.tuberlin.dima.bdapro.error.BusinessException;
-import de.tuberlin.dima.bdapro.data.DataStore;
 import lombok.Getter;
-import lombok.Setter;
 import org.apache.commons.lang3.ArrayUtils;
 
 public class TaxiRide implements IDataAccessor, Streamable<TaxiRide> {

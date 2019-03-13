@@ -4,7 +4,7 @@ service:
   flink:
     args:
 #     - "--input"
-#     - "/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/1000000.csv"
+#     - "data/1000000.csv"
 #     - "--output"
 #     - "data/out/"
 server:

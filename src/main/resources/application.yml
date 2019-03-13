@@ -14,9 +14,9 @@ service:
     data-location: "data/1000000.csv"
   flink:
     args:
-      #     - "--input"
-      #     - "/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/1000000.csv"
+      # - "--input"
+      # - "data/1000000.csv"
       # - "--output"
-      # - "/home/eleicha/Repos/BDAPRO_neu/BDAPRO_optimized_visualization_pipeline/data/out/fib-result"
+      # - "data/out/fib-result"
 server:
   port: 8082
