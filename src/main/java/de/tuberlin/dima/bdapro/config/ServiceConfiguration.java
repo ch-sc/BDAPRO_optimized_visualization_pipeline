@@ -119,13 +119,13 @@ public class ServiceConfiguration {
 		
 		// obtain execution environment and set setBufferTimeout to 1 to enable
 		// continuous flushing of the output buffers (lowest latency)
-		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment()
-				.setBufferTimeout(60000);
+		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+//				.setBufferTimeout(60000);
 		// make parameters available in the web interface
 		// Checking input parameters
 		final ParameterTool params = ParameterTool.fromArgs(properties.getFlink().args);
 		env.getConfig().setGlobalJobParameters(params);
-		setupInputStream(env, params);
+//		setupInputStream(env, params);
 
 //		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 		

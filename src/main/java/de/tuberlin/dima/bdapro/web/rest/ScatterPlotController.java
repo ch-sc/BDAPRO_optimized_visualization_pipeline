@@ -5,6 +5,7 @@ import de.tuberlin.dima.bdapro.data.StreamProcessor;
 import de.tuberlin.dima.bdapro.error.ErrorType;
 import de.tuberlin.dima.bdapro.error.ErrorTypeException;
 import de.tuberlin.dima.bdapro.model.ExecutionType;
+import de.tuberlin.dima.bdapro.model.OptimizationType;
 import de.tuberlin.dima.bdapro.service.DataService;
 import de.tuberlin.dima.bdapro.service.MessagingService;
 import de.tuberlin.dima.bdapro.util.DataTransformer;
@@ -68,21 +69,21 @@ public class ScatterPlotController {
 	
 	@GetMapping(value = "/stream/cluster")
 	public void createClusterStreamAsync(@ModelAttribute("bounds") DimensionalityBounds bounds,
-			@RequestParam(value = "f", required = false, defaultValue = "KMEANSVDDA") ExecutionType executionType,
+			@RequestParam(value = "opt", required = false, defaultValue = "VDDA") OptimizationType optimizationType,
 			@RequestParam(value = "iterations", required = false, defaultValue = "1000") Integer iterations,
 			@RequestParam(value = "window", required = false, defaultValue = "3600000") Long windowSize,
 			@RequestParam(value = "slide", required = false, defaultValue = "3600000") Long slide) {
-		dataService.cluster(executionType, bounds.x, bounds.y, 5, iterations, Time.milliseconds(windowSize),
+		dataService.cluster(optimizationType, bounds.x, bounds.y, 5, iterations, Time.milliseconds(windowSize),
 				Time.milliseconds(slide));
 	}
 	
 	
 	@GetMapping(value = "/stream/scatter")
 	public void createScatterStreamAsync(@ModelAttribute("bounds") DimensionalityBounds bounds,
-			@RequestParam(value = "f", required = false, defaultValue = "VDDASTREAMING") ExecutionType executionType,
+			@RequestParam(value = "opt", required = false, defaultValue = "VDDA") OptimizationType optimizationType,
 			@RequestParam(value = "window", required = false, defaultValue = "3600000") Long windowSize,
 			@RequestParam(value = "slide", required = false, defaultValue = "3600000") Long slide) {
-		dataService.doScatterStreaming(executionType, bounds.x, bounds.y, Time.milliseconds(windowSize),
+		dataService.doScatterStreaming(optimizationType, bounds.x, bounds.y, Time.milliseconds(windowSize),
 				Time.milliseconds(slide));
 	}
 	
